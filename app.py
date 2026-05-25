@@ -7,7 +7,7 @@ import time
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Forest-Vision | SVD", layout="wide", page_icon="🌍")
 
-# --- CUSTOM CSS (Tampilan Judul Tengah) ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
     .main-header { font-size: 3rem; font-weight: 900; color: #1E4620; text-align: center; margin-bottom: 0; }
@@ -15,18 +15,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER UTAMA DI TENGAH ---
+# --- HEADER UTAMA ---
 st.markdown('<p class="main-header">🌍 Forest Data-Lite</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Sistem Kompresi Citra via Dekomposisi Matriks (SDG 15)</p>', unsafe_allow_html=True)
 
 # ==========================================
-# MENU TAB ATAS (GAYA APLIKASI WEB MODERN)
+# MENU TAB ATAS
 # ==========================================
 tab_app, tab_teori = st.tabs(["🚀 WORKSPACE KOMPRESI", "📚 DASAR TEORI ALJABAR LINIER"])
 
 # --- ISI TAB 1: APLIKASI UTAMA ---
 with tab_app:
-    # Kotak Pengaturan dan Upload (Berjejer ke samping)
     with st.container(border=True):
         st.write("### ⚙️ Panel Input Data")
         col_input1, col_input2 = st.columns(2)
@@ -36,12 +35,9 @@ with tab_app:
         with col_input2:
             uploaded_file = st.file_uploader("Unggah Citra Hutan (JPG/PNG)", type=["jpg", "png", "jpeg"])
 
-    # --- LOGIKA SVD ---
     if uploaded_file is not None:
         st.write("---")
-        
-        # Efek Memuat
-        with st.spinner('Mengekstrak Vektor Eigen & Menghitung Singular Value Decomposition...'):
+        with st.spinner('Mengekstrak Vektor Eigen & Menghitung SVD...'):
             time.sleep(1) 
             
             if mode_warna == "Grayscale (Matriks 2D)":
@@ -58,11 +54,9 @@ with tab_app:
                 UB, SB, VtB = np.linalg.svd(B, full_matrices=False)
                 max_k = len(SR)
 
-        # SLIDER UTAMA LEBAR
         st.write("### 🎚️ Panel Kendali Matriks (Atur Resolusi)")
         k = st.slider("Jumlah Komponen Singular (k) yang dipertahankan:", min_value=1, max_value=max_k, value=max_k//5, step=1)
         
-        # Proses Rekonstruksi
         if mode_warna == "Grayscale (Matriks 2D)":
             Ak = np.dot(U[:, :k], np.dot(np.diag(S[:k]), Vt[:k, :]))
             Ak = np.clip(Ak, 0, 255).astype(np.uint8)
@@ -77,7 +71,6 @@ with tab_app:
             img_compressed = Image.fromarray(Ak)
             energy = (np.sum(SR[:k]**2) / np.sum(SR**2)) * 100
 
-        # TAMPILAN GAMBAR
         col_img1, col_img2 = st.columns(2)
         with col_img1:
             st.write(f"#### 🖼️ Citra Asli (Dimensi: {A.shape})")
@@ -86,16 +79,13 @@ with tab_app:
         with col_img2:
             st.write(f"#### 🗜️ Hasil SVD (k = {k})")
             st.image(img_compressed, use_column_width=True)
-            
             st.write(f"**Informasi Visual Dipertahankan: {energy:.2f}%**")
             st.progress(int(energy))
 
-            # Tombol Unduh
             buf = io.BytesIO()
             img_compressed.save(buf, format="PNG")
             st.download_button("📥 Unduh Citra Terkompresi", buf.getvalue(), f"svd_result_k{k}.png", "image/png", use_container_width=True, type="primary")
 
-        # TABEL MATRIKS MELIPAT (AKORDION)
         st.write("---")
         with st.expander("🔍 Buka Inspeksi Detail Angka Matriks ($15 \\times 15$ Piksel Pertama)"):
             if mode_warna == "Grayscale (Matriks 2D)":
@@ -107,29 +97,33 @@ with tab_app:
                 with tab_m5: st.dataframe(Ak[:15, :15], use_container_width=True)
             else:
                 st.warning("Inspeksi angka hanya didukung pada mode Matriks 2D (Grayscale).")
-
     else:
         st.info("👈 Silakan unggah gambar pada panel di atas untuk memulai simulasi.")
 
-# --- ISI TAB 2: DASAR TEORI ---
+# ==========================================
+# ISI TAB 2: DASAR TEORI (FULL ALJABAR LINIER)
+# ==========================================
 with tab_teori:
-    st.write("### 📖 Mengapa Aplikasi Ini Berhasil Mengompresi Gambar?")
+    st.write("### 📖 Landasan Matematika di Balik Aplikasi")
+    st.write("Aplikasi ini dibangun menggunakan integrasi dari **5 pilar utama** materi Aljabar Linier:")
     
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        st.info("**Definisi SVD**")
-        st.write("Aplikasi ini menggunakan **Singular Value Decomposition (SVD)** untuk memecah matriks gambar ($A$) berukuran $m \\times n$ menjadi perkalian tiga buah matriks:")
+    with st.expander("1. Matriks (Representasi Digital)", expanded=True):
+        st.write("Dalam ilmu komputer, citra/gambar tidak disimpan sebagai foto, melainkan direpresentasikan sebagai **Matriks 2 Dimensi** (untuk Grayscale) atau **Tensor 3 Dimensi** (untuk RGB). Setiap elemen matriks berisi angka intensitas piksel (0 - 255).")
+        
+    with st.expander("2. Dekomposisi SVD (Singular Value Decomposition)"):
+        st.write("SVD adalah algoritma yang memecah (memfaktorkan) matriks citra $A$ berukuran $m \\times n$ menjadi perkalian tiga matriks terpisah:")
         st.latex(r"A = U \cdot \Sigma \cdot V^T")
-        st.write("""
-        - $U$ berisi **Vektor Eigen** dari $AA^T$.
-        - $\Sigma$ adalah matriks diagonal berisi **Nilai Singular**.
-        - $V^T$ berisi **Vektor Eigen** dari $A^TA$.
+        
+    with st.expander("3. Nilai Eigen & Vektor Eigen (Akar dari SVD)"):
+        st.write("Meskipun yang dipanggil adalah fungsi SVD, metode ini secara matematis diturunkan murni dari konsep Eigen:")
+        st.markdown("""
+        - Matriks $U$ berisi **Vektor Eigen** dari hasil perkalian $AA^T$.
+        - Matriks $V^T$ berisi **Vektor Eigen** dari hasil perkalian $A^TA$.
+        - Nilai-nilai di dalam matriks $\Sigma$ pada dasarnya adalah akar kuadrat dari **Nilai Eigen** tersebut.
         """)
         
-    with col_t2:
-        st.success("**Metode Kompresi (Truncation)**")
-        st.write("""
-        Setiap gambar memiliki nilai singular. Nilai terbesar merepresentasikan fitur penting (seperti bentuk pohon), sedangkan nilai terkecil biasanya hanya bintik/noise. 
+    with st.expander("4. Diagonalisasi & Matriks Diagonal"):
+        st.write("Matriks $\Sigma$ (Sigma) hasil dari SVD adalah sebuah **Matriks Diagonal**. Semua elemen pada matriks tersebut bernilai nol, *kecuali* pada garis diagonal utamanya yang berisikan Nilai Singular. Pada aplikasi ini, kita memotong dimensi matriks diagonal ini (menggunakan *slider*) untuk membuang nilai yang kecil.")
         
-        Dengan mengatur *slider*, kita memotong matriks dan membuang nilai singular yang kecil. Gambar direkonstruksi dengan data yang jauh lebih sedikit, sehingga **ukuran file (MB/KB) mengecil drastis**, namun bentuk aslinya tetap dapat dikenali mata.
-        """)
+    with st.expander("5. Operasi Perkalian Matriks (Dot Product)"):
+        st.write("Untuk menampilkan gambar yang sudah dikompresi ke layar, program mengeksekusi operasi **Perkalian Matriks** ($U_k \cdot \Sigma_k \cdot V^T_k$). Proses ini merekonstruksi kembali matriks-matriks yang sudah dipotong menjadi satu matriks gambar $A_k$ yang utuh dengan ukuran file yang jauh lebih efisien.")

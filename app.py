@@ -2,43 +2,77 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 
-# Bagian Tampilan Web
-st.set_page_config(page_title="SVD Image Compressor", page_icon="🗜️")
-st.title("🗜️ SVD Image Compressor")
-st.write("Aplikasi Kompresi Gambar berbasis Aljabar Linier (Singular Value Decomposition).")
+# Konfigurasi Halaman
+st.set_page_config(page_title="Forest Data-Lite | SVD Compressor", layout="centered", page_icon="🌲")
 
-# Fitur Upload Gambar
-uploaded_file = st.file_uploader("Unggah Gambar Apa Saja (JPG/PNG)", type=["jpg", "png", "jpeg"])
+# --- HEADER ---
+st.title("🌲 Forest Data-Lite")
+st.subheader("Implementasi SVD Kompresi Citra Hutan (SDG 15)")
+st.write("Singular Value Decomposition memecah matriks citra ($A$) menjadi $U \Sigma V^T$.")
 
+# --- SIDEBAR (INPUT) ---
+st.sidebar.header("Konfigurasi Projek")
+uploaded_file = st.sidebar.file_uploader("Unggah Citra Hutan (JPG/PNG)", type=["jpg", "png", "jpeg"])
+
+# --- LOGIKA ALJABAR LINIER ---
 if uploaded_file is not None:
-    # Membaca gambar sebagai Matriks Hitam Putih (Grayscale) agar proses SVD ringan
+    # 1. Konversi ke Grayscale (Matriks 2D)
     image = Image.open(uploaded_file).convert('L')
-    img_matrix = np.array(image)
+    A = np.array(image)
     
-    st.image(image, caption="Gambar Asli", use_column_width=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("**Citra Asli**")
+        st.image(image, use_column_width=True)
+        st.caption(f"Resolusi: {A.shape[0]} x {A.shape[1]} piksel")
     
-    # MATERI ALJABAR LINIER: Dekomposisi Matriks (SVD)
-    # Matriks gambar dipecah menjadi U, Sigma (S), dan V Transpose
-    U, S, V_T = np.linalg.svd(img_matrix, full_matrices=False)
+    # 2. Proses SVD
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
     
+    # 3. Slider untuk menentukan Nilai k
+    max_k = len(S)
     st.write("---")
-    st.write("### Atur Tingkat Kompresi")
-    st.write("Semakin kecil nilai *k*, gambar semakin buram tapi ukuran file semakin kecil.")
+    k = st.slider("Atur Nilai Komponen Singular (k):", min_value=1, max_value=max_k, value=50)
     
-    # Slider untuk memilih jumlah nilai singular (k) yang mau dipakai
-    max_k = min(img_matrix.shape)
-    k = st.slider("Pilih Nilai k (Singular Values):", min_value=1, max_value=max_k, value=50)
+    # 4. Rekonstruksi Matriks
+    Ak = np.dot(U[:, :k], np.dot(np.diag(S[:k]), Vt[:k, :]))
+    Ak = np.clip(Ak, 0, 255).astype(np.uint8)
+    img_compressed = Image.fromarray(Ak)
     
-    if st.button("Kompres Gambar!"):
-        # PROSES MATEMATIKA: Rekonstruksi Matriks yang sudah dikompresi
-        # Rumus: Matriks Baru = U_k * Sigma_k * V_T_k
-        reconstructed_matrix = np.dot(U[:, :k], np.dot(np.diag(S[:k]), V_T[:k, :]))
+    with col2:
+        st.write(f"**Citra Kompresi (k={k})**")
+        st.image(img_compressed, use_column_width=True)
+        # Menghitung energi yang dipertahankan (seperti punya temanmu)
+        energy_retained = (np.sum(S[:k]**2) / np.sum(S**2)) * 100
+        st.caption(f"Informasi Visual Bertahan: {energy_retained:.2f}%")
+    
+    # --- FITUR PAMER MATRIKS (SEPERTI PUNYA TEMANMU) ---
+    st.divider()
+    st.write("### 🧮 Detail Komputasi Matriks (Aljabar Linier)")
+    st.write("Berikut adalah cuplikan elemen matriks (15x15 piksel pojok kiri atas) yang diproses di belakang layar:")
+    
+    # Membuat Tab
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Matriks Citra (A)", "Matriks U", "Nilai Singular (Σ)", "Matriks V^T", "Matriks Hasil (Ak)"])
+    
+    with tab1:
+        st.write("Matriks Intensitas Piksel Asli ($A$)")
+        st.dataframe(A[:15, :15])
         
-        # Validasi batas matriks agar tetap berwujud piksel (0-255)
-        reconstructed_matrix = np.clip(reconstructed_matrix, 0, 255).astype(np.uint8)
+    with tab2:
+        st.write("Matriks Ortogonal Kiri ($U$) - *Vektor Eigen dari* $AA^T$")
+        st.dataframe(U[:15, :15])
         
-        # Ubah matriks kembali menjadi gambar
-        hasil_image = Image.fromarray(reconstructed_matrix)
+    with tab3:
+        st.write("Matriks Diagonal ($\Sigma$) - *Akar Nilai Eigen*")
+        st.dataframe(np.diag(S[:15]))
         
-        st.success(f"Berhasil! Gambar direkonstruksi hanya dengan {k} nilai singular utama.")
-        st.image(hasil_image, caption=f"Hasil Kompresi (k = {k})", use_column_width=True)
+    with tab4:
+        st.write("Matriks Ortogonal Kanan ($V^T$) - *Vektor Eigen dari* $A^TA$")
+        st.dataframe(Vt[:15, :15])
+        
+    with tab5:
+        st.write("Matriks Hasil Rekonstruksi Kompresi ($A_k$)")
+        st.dataframe(Ak[:15, :15])
+
+else:
+    st.info("Silakan unggah gambar di bilah sisi (sidebar kiri) untuk memulai simulasi SVD.")

@@ -16,7 +16,6 @@ CSS_UTAMA = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* ── Variabel warna tema hutan SDG 15 ── */
 :root {
     --hijau-gelap:  #0d2b0f;
     --hijau-tengah: #2d6a30;
@@ -27,7 +26,6 @@ CSS_UTAMA = """
     --krem:         #f5f0e8;
 }
 
-/* ── Background halaman utama ── */
 html, body, [data-testid="stAppViewContainer"] {
     background: linear-gradient(
         160deg,
@@ -40,14 +38,12 @@ html, body, [data-testid="stAppViewContainer"] {
 
 [data-testid="stHeader"] { background: transparent !important; }
 
-/* ── Sidebar ── */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #071409 0%, #0f2410 100%) !important;
     border-right: 1px solid rgba(109,191,110,0.15) !important;
 }
 [data-testid="stSidebar"] * { color: var(--krem) !important; }
 
-/* ── Tab navigasi ── */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
     background: rgba(13,43,15,0.6) !important;
     border-radius: 12px !important;
@@ -66,7 +62,6 @@ html, body, [data-testid="stAppViewContainer"] {
     color: var(--hijau-daun) !important;
 }
 
-/* ── Progress bar ── */
 [data-testid="stProgress"] > div > div {
     background: linear-gradient(90deg, var(--hijau-tengah), var(--hijau-lime)) !important;
     border-radius: 99px !important;
@@ -77,7 +72,6 @@ html, body, [data-testid="stAppViewContainer"] {
     height: 8px !important;
 }
 
-/* ── Tombol (button & download) ── */
 [data-testid="stButton"] button,
 [data-testid="stDownloadButton"] button {
     background: linear-gradient(135deg, var(--hijau-tengah), #1f5222) !important;
@@ -93,7 +87,6 @@ html, body, [data-testid="stAppViewContainer"] {
     box-shadow: 0 4px 20px rgba(45,106,48,0.5) !important;
 }
 
-/* ── Selectbox & file uploader ── */
 [data-testid="stSelectbox"] > div > div {
     background: rgba(13,43,15,0.7) !important;
     border: 1px solid rgba(109,191,110,0.25) !important;
@@ -105,21 +98,18 @@ html, body, [data-testid="stAppViewContainer"] {
     background: rgba(13,43,15,0.4) !important;
 }
 
-/* ── Expander ── */
 [data-testid="stExpander"] {
     background: rgba(13,43,15,0.5) !important;
     border: 1px solid rgba(109,191,110,0.18) !important;
     border-radius: 14px !important;
 }
 
-/* ── Dataframe ── */
 [data-testid="stDataFrame"] {
     border: 1px solid rgba(109,191,110,0.2) !important;
     border-radius: 12px !important;
     overflow: hidden;
 }
 
-/* ── Footer ── */
 .footer-bar {
     margin-top: 60px;
     padding: 30px;
@@ -143,7 +133,7 @@ def terapkan_css():
 
 
 # ─────────────────────────────────────────────────────────
-# BAGIAN 3: KOMPONEN HERO / HEADER
+# BAGIAN 3: HERO BANNER
 # ─────────────────────────────────────────────────────────
 
 def render_hero_banner():
@@ -159,7 +149,6 @@ def render_hero_banner():
         position: relative;
         overflow: hidden;
     '>
-        <!-- Efek cahaya latar -->
         <div style='
             position:absolute; top:0; left:0; right:0; bottom:0;
             background:
@@ -168,7 +157,6 @@ def render_hero_banner():
             pointer-events:none;
         '></div>
 
-        <!-- Label SDG -->
         <div style='
             display:inline-block;
             background: linear-gradient(90deg, rgba(212,168,67,0.2), rgba(212,168,67,0.1));
@@ -182,7 +170,6 @@ def render_hero_banner():
             margin-bottom: 20px;
         '>🌿 SDG 15 · Life on Land · Forest Conservation</div>
 
-        <!-- Judul utama -->
         <div style='
             font-family: Playfair Display, serif;
             font-size: 3.2rem;
@@ -192,7 +179,6 @@ def render_hero_banner():
             margin-bottom: 12px;
         '>Forest<span style='color:#6dbf6e;'>Vision</span></div>
 
-        <!-- Subjudul -->
         <div style='
             font-size: 1rem;
             color: rgba(245,240,232,0.6);
@@ -204,7 +190,6 @@ def render_hero_banner():
             matematika linier untuk pemantauan lingkungan hidup.
         </div>
 
-        <!-- Badge fitur -->
         <div style='display:flex; justify-content:center; gap:12px; flex-wrap:wrap;'>
             <span style='background:rgba(45,106,48,0.25); border:1px solid rgba(109,191,110,0.3);
                          border-radius:12px; padding:8px 16px; font-size:0.8rem; color:#6dbf6e;'>

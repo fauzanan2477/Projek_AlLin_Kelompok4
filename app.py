@@ -2,79 +2,91 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-# --- KONFIGURASI WEB ---
-st.set_page_config(page_title="Borneo Fire-Predictor | SDG 15", layout="wide", page_icon="🔥")
+# --- 1. KONFIGURASI TAMPILAN WEB ---
+st.set_page_config(page_title="Eco-Rank | SDG 15", layout="wide", page_icon="🐆")
 
-st.markdown('<h1 style="color:#d35400; text-align:center;">🔥 Borneo Fire-Predictor</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#e67e22; font-size:1.2rem;">Prediksi Kebakaran Hutan Kalimantan (SDG 15) via Invers Matriks & SPL</p>', unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    .judul { font-size: 2.8rem; font-weight: 900; color: #1E4620; text-align: center; margin-bottom: 0px; }
+    .subjudul { font-size: 1.2rem; color: #4A7C59; text-align: center; margin-bottom: 30px; }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- 1. DATA HISTORIS (MATRIKS SUMBER) ---
-st.sidebar.header("📊 Data Historis (Kalimantan 2023)")
-st.sidebar.write("Data ini dibaca oleh sistem sebagai Matriks X (Suhu & Hujan) dan Vektor Y (Hektar Terbakar).")
+st.markdown('<p class="judul">🐆 Eco-Rank: Deteksi Spesies Kunci</p>', unsafe_allow_html=True)
+st.markdown('<p class="subjudul">Analisis Sentralitas Ekosistem Hutan (SDG 15) Menggunakan Matriks & Vektor Eigen</p>', unsafe_allow_html=True)
 
-data = {
-    "Bulan": ["Maret", "April", "Mei", "Juni", "Juli", "Agustus"],
-    "Suhu (°C)": [32.0, 32.5, 33.1, 34.0, 35.2, 36.5],
-    "Curah Hujan (mm)": [200, 150, 100, 80, 40, 20],
-    "Terbakar (Hektar)": [1500, 2100, 3500, 6200, 11000, 23697]
-}
-df = pd.DataFrame(data)
-st.sidebar.dataframe(df.set_index("Bulan"))
+# --- 2. PANEL INPUT (SIDEBAR) ---
+st.sidebar.header("⚙️ Kekuatan Interaksi Matriks")
+st.sidebar.write("Atur seberapa besar ketergantungan (aliran energi) antar spesies di ekosistem ini.")
 
-# --- 2. ALGORITMA ALJABAR LINIER (REGRESI MATRIKS) ---
-# Membentuk Vektor Target Y
-Y = df["Terbakar (Hektar)"].values
+st.sidebar.subheader("Tingkat Konsumsi Herbivora:")
+w_pohon_monyet = st.sidebar.slider("Ketergantungan Monyet pada Pohon", 0.0, 5.0, 3.0)
+w_pohon_rangkong = st.sidebar.slider("Ketergantungan Rangkong pada Pohon", 0.0, 5.0, 2.0)
 
-# Membentuk Matriks X (Kolom 1 berisi angka 1 untuk konstanta)
-X = np.column_stack((np.ones(len(df)), df["Suhu (°C)"], df["Curah Hujan (mm)"]))
+st.sidebar.subheader("Tingkat Konsumsi Karnivora:")
+w_monyet_macan = st.sidebar.slider("Macan Dahan memangsa Monyet", 0.0, 5.0, 4.0)
+w_rangkong_macan = st.sidebar.slider("Macan Dahan memangsa Rangkong", 0.0, 5.0, 1.5)
+w_macan_harimau = st.sidebar.slider("Harimau memangsa Macan Dahan", 0.0, 5.0, 5.0)
 
-# Rumus Persamaan Normal: Beta = (X^T * X)^-1 * X^T * Y
-X_T = X.T                                   # 1. Transpose Matriks X
-X_T_X = np.dot(X_T, X)                      # 2. Perkalian X^T dengan X
-X_T_X_inv = np.linalg.inv(X_T_X)            # 3. MENCARI INVERS MATRIKS (MATERI ALIN INTI)
-X_T_Y = np.dot(X_T, Y)                      # 4. Perkalian X^T dengan Vektor Y
-Beta = np.dot(X_T_X_inv, X_T_Y)             # 5. Hasil Akhir (Koefisien SPL)
+# --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
+spesies = ["Pohon Ara", "Monyet", "Burung Rangkong", "Macan Dahan", "Harimau Sumatera"]
 
-# --- 3. BUKTI KOMPUTASI UNTUK DOSEN ---
-st.divider()
-st.write("### 🧮 Bukti Komputasi Aljabar Linier (Persamaan Normal)")
-col1, col2, col3 = st.columns(3)
+# Membentuk Matriks Ketetanggaan Berbobot (Adjacency Matrix) 5x5
+# Baris: Dimakan oleh, Kolom: Yang memakan
+A = np.array([
+    [0.0, w_pohon_monyet, w_pohon_rangkong, 0.0, 0.0],
+    [0.0, 0.0, 0.0, w_monyet_macan, 0.0],
+    [0.0, 0.0, 0.0, w_rangkong_macan, 0.0],
+    [0.0, 0.0, 0.0, 0.0, w_macan_harimau],
+    [0.0, 0.0, 0.0, 0.0, 0.0]
+])
 
-with col1:
-    st.info("1. Matriks Fitur (X)")
-    st.write("Terdiri dari kolom: Konstanta (1), Suhu, dan Curah Hujan.")
-    st.dataframe(pd.DataFrame(X, columns=["Konstanta", "Suhu", "Hujan"]))
+# Agar Vektor Eigen bekerja sempurna layaknya PageRank, matriks harus distabilkan (Damping Factor / Ekosistem Terbuka)
+# Kita tambahkan nilai kecil agar tidak ada baris/kolom yang benar-benar 0
+A = A + 0.1 
 
-with col2:
-    st.info("2. Invers Matriks $(X^T X)^{-1}$")
-    st.write("Algoritma mencari invers dari perkalian matriks menggunakan `np.linalg.inv()`.")
-    st.dataframe(pd.DataFrame(X_T_X_inv))
+# --- 4. TAMPILAN HASIL (DASHBOARD) ---
+tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PERINGKAT", "🧮 BUKTI MATRIKS & VEKTOR EIGEN"])
 
-with col3:
-    st.info("3. Solusi Vektor SPL ($\beta$)")
-    st.write("Bobot yang ditemukan dari perkalian Invers Matriks:")
-    df_beta = pd.DataFrame(Beta, index=["Konstanta (b0)", "Bobot Suhu (b1)", "Bobot Hujan (b2)"], columns=["Nilai"])
-    st.dataframe(df_beta)
-
-# --- 4. KALKULATOR PREDIKSI MASA DEPAN ---
-st.divider()
-st.write("### 🔮 Simulator Prediksi Karhutla Kalimantan (Masa Depan)")
-st.write("Berdasarkan Invers Matriks di atas, sistem telah menemukan Sistem Persamaan Linier baru: **$Y = b_0 + b_1(Suhu) + b_2(Hujan)$**")
-
-col_input1, col_input2, col_hasil = st.columns(3)
-with col_input1:
-    input_suhu = st.number_input("Prediksi Suhu Ekstrem (°C):", value=37.0, step=0.5)
-with col_input2:
-    input_hujan = st.number_input("Prediksi Curah Hujan (mm):", value=10.0, step=10.0)
-
-with col_hasil:
-    # Memasukkan input baru ke dalam perkalian matriks
-    vektor_input = np.array([1, input_suhu, input_hujan])
-    prediksi_y = np.dot(vektor_input, Beta)
+with tab_grafik:
+    col_chart, col_data = st.columns([2, 1])
     
-    st.warning("🚨 **Estimasi Hutan Terbakar:**")
-    st.header(f"{max(0, prediksi_y):,.0f} Hektar")
-    if prediksi_y > 10000:
-        st.error("Status: BENCANA NASIONAL (SDG 15 Terancam Kritis!)")
-    else:
-        st.success("Status: Terkendali (Masih dalam batas mitigasi)")
+    # EKSEKUSI PENCARIAN NILAI & VEKTOR EIGEN
+    nilai_eigen, vektor_eigen = np.linalg.eig(A)
+    
+    # Ambil Vektor Eigen yang bersesuaian dengan Nilai Eigen Terbesar
+    idx_max = np.argmax(np.abs(nilai_eigen))
+    vektor_sentralitas = np.abs(np.real(vektor_eigen[:, idx_max]))
+    
+    # Normalisasi skor menjadi persentase (Total 100%)
+    skor_akhir = (vektor_sentralitas / np.sum(vektor_sentralitas)) * 100
+    
+    df_ranking = pd.DataFrame({
+        "Spesies": spesies,
+        "Skor Kepentingan (%)": skor_akhir
+    }).sort_values(by="Skor Kepentingan (%)", ascending=False).reset_index(drop=True)
+
+    with col_chart:
+        st.write("### 🏆 Peringkat Spesies Kunci Ekosistem")
+        st.bar_chart(df_ranking.set_index("Spesies"))
+        st.info("💡 **Analisis SDG 15:** Geser kekuatan rantai makanan di panel kiri. Spesies dengan persentase tertinggi adalah **Spesies Kunci**. Jika pemerintah membiarkan spesies tersebut punah, seluruh jaring-jaring kehidupan di hutan ini akan runtuh berantakan!")
+        
+    with col_data:
+        st.write("### 📋 Tabel Vektor Sentralitas")
+        st.dataframe(df_ranking.style.format({"Skor Kepentingan (%)": "{:.2f}%"}), use_container_width=True)
+        spesies_kunci = df_ranking.iloc[0]["Spesies"]
+        st.error(f"🚨 **PRIORITAS KONSERVASI: {spesies_kunci}**")
+
+with tab_teori:
+    st.write("### Landasan Teori: Vektor Eigen Utama (Principal Eigenvector)")
+    
+    st.write("#### 1. Pembentukan Matriks Ekosistem ($A$)")
+    st.write("Nilai-nilai dari input *slider* disusun menjadi **Matriks Ketetanggaan** berordo $5 \\times 5$:")
+    df_A = pd.DataFrame(A, index=spesies, columns=spesies)
+    st.dataframe(df_A.style.format("{:.1f}"))
+    
+    st.write("#### 2. Persamaan Karakteristik & Vektor Eigen ($Ax = \lambda x$)")
+    st.write("Menghitung tingkat kepentingan hewan tidak bisa hanya dengan menjumlahkan siapa memakan siapa (skalar). Hewan yang jarang dimakan, namun dimakan oleh *predator yang sangat penting*, akan mendapatkan skor yang tinggi. Hal ini dipecahkan menggunakan komputasi matriks Vektor Eigen.")
+    
+    st.success(f"Sistem menemukan Nilai Eigen Utama ($\lambda$) = **{np.real(nilai_eigen[idx_max]):.4f}**")
+    st.write("Vektor Eigen yang bersesuaian dengan Nilai Eigen tersebut kemudian diekstrak, dan itulah yang menjadi **Skor Kepentingan** pada grafik di halaman depan.")

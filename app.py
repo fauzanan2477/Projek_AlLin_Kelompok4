@@ -2,95 +2,79 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-# --- 1. KONFIGURASI TAMPILAN WEB ---
-st.set_page_config(page_title="Fauna-Matrix | SDG 15", layout="wide", page_icon="🐒")
+# --- KONFIGURASI WEB ---
+st.set_page_config(page_title="Borneo Fire-Predictor | SDG 15", layout="wide", page_icon="🔥")
 
-st.markdown("""
-    <style>
-    .judul { font-size: 2.8rem; font-weight: 900; color: #1E4620; text-align: center; margin-bottom: 0px; }
-    .subjudul { font-size: 1.2rem; color: #4A7C59; text-align: center; margin-bottom: 30px; }
-    </style>
-""", unsafe_allow_html=True)
+st.markdown('<h1 style="color:#d35400; text-align:center;">🔥 Borneo Fire-Predictor</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#e67e22; font-size:1.2rem;">Prediksi Kebakaran Hutan Kalimantan (SDG 15) via Invers Matriks & SPL</p>', unsafe_allow_html=True)
 
-st.markdown('<p class="judul">🐒 Fauna-Matrix Predictor</p>', unsafe_allow_html=True)
-st.markdown('<p class="subjudul">Pemodelan Populasi Satwa Langka (SDG 15) Menggunakan Matriks Leslie & Nilai Eigen</p>', unsafe_allow_html=True)
+# --- 1. DATA HISTORIS (MATRIKS SUMBER) ---
+st.sidebar.header("📊 Data Historis (Kalimantan 2023)")
+st.sidebar.write("Data ini dibaca oleh sistem sebagai Matriks X (Suhu & Hujan) dan Vektor Y (Hektar Terbakar).")
 
-# --- 2. PANEL INPUT (SIDEBAR) ---
-st.sidebar.header("⚙️ 1. Vektor Populasi Awal")
-bayi = st.sidebar.number_input("Usia Bayi (0-1 Tahun):", value=100)
-remaja = st.sidebar.number_input("Usia Remaja (1-3 Tahun):", value=50)
-dewasa = st.sidebar.number_input("Usia Dewasa (>3 Tahun):", value=30)
+data = {
+    "Bulan": ["Maret", "April", "Mei", "Juni", "Juli", "Agustus"],
+    "Suhu (°C)": [32.0, 32.5, 33.1, 34.0, 35.2, 36.5],
+    "Curah Hujan (mm)": [200, 150, 100, 80, 40, 20],
+    "Terbakar (Hektar)": [1500, 2100, 3500, 6200, 11000, 23697]
+}
+df = pd.DataFrame(data)
+st.sidebar.dataframe(df.set_index("Bulan"))
 
-st.sidebar.header("🧬 2. Parameter Matriks Leslie")
-st.sidebar.write("Tingkat Kelahiran (Fekunditas):")
-f1 = st.sidebar.slider("F1 (Bayi)", 0.0, 2.0, 0.0)
-f2 = st.sidebar.slider("F2 (Remaja)", 0.0, 5.0, 1.2)
-f3 = st.sidebar.slider("F3 (Dewasa)", 0.0, 5.0, 2.0)
+# --- 2. ALGORITMA ALJABAR LINIER (REGRESI MATRIKS) ---
+# Membentuk Vektor Target Y
+Y = df["Terbakar (Hektar)"].values
 
-st.sidebar.write("Tingkat Bertahan Hidup (Survival):")
-s1 = st.sidebar.slider("S1 (Bayi ke Remaja)", 0.0, 1.0, 0.6)
-s2 = st.sidebar.slider("S2 (Remaja ke Dewasa)", 0.0, 1.0, 0.8)
+# Membentuk Matriks X (Kolom 1 berisi angka 1 untuk konstanta)
+X = np.column_stack((np.ones(len(df)), df["Suhu (°C)"], df["Curah Hujan (mm)"]))
 
-# --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
-# Membentuk Matriks Leslie (L) berordo 3x3
-L = np.array([
-    [f1, f2, f3],
-    [s1, 0.0, 0.0],
-    [0.0, s2, 0.0]
-])
+# Rumus Persamaan Normal: Beta = (X^T * X)^-1 * X^T * Y
+X_T = X.T                                   # 1. Transpose Matriks X
+X_T_X = np.dot(X_T, X)                      # 2. Perkalian X^T dengan X
+X_T_X_inv = np.linalg.inv(X_T_X)            # 3. MENCARI INVERS MATRIKS (MATERI ALIN INTI)
+X_T_Y = np.dot(X_T, Y)                      # 4. Perkalian X^T dengan Vektor Y
+Beta = np.dot(X_T_X_inv, X_T_Y)             # 5. Hasil Akhir (Koefisien SPL)
 
-# Membentuk Vektor Populasi Awal (N0)
-N0 = np.array([bayi, remaja, dewasa])
-
+# --- 3. BUKTI KOMPUTASI UNTUK DOSEN ---
 st.divider()
-tahun_prediksi = st.slider("🎯 Proyeksi Pertumbuhan (Tahun ke depan):", 1, 50, 15)
+st.write("### 🧮 Bukti Komputasi Aljabar Linier (Persamaan Normal)")
+col1, col2, col3 = st.columns(3)
 
-# Perulangan Perkalian Matriks (Dot Product)
-hasil = [N0]
-N_curr = N0
-for i in range(tahun_prediksi):
-    # Rumus Alin: N_next = L * N_curr
-    N_next = np.dot(L, N_curr) 
-    hasil.append(N_next)
-    N_curr = N_next
+with col1:
+    st.info("1. Matriks Fitur (X)")
+    st.write("Terdiri dari kolom: Konstanta (1), Suhu, dan Curah Hujan.")
+    st.dataframe(pd.DataFrame(X, columns=["Konstanta", "Suhu", "Hujan"]))
 
-df = pd.DataFrame(hasil, columns=["Usia Bayi", "Usia Remaja", "Usia Dewasa"])
-df.index.name = "Tahun"
+with col2:
+    st.info("2. Invers Matriks $(X^T X)^{-1}$")
+    st.write("Algoritma mencari invers dari perkalian matriks menggunakan `np.linalg.inv()`.")
+    st.dataframe(pd.DataFrame(X_T_X_inv))
 
-# --- 4. TAMPILAN HASIL (DASHBOARD) ---
-tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PROYEKSI", "🧮 BUKTI KOMPUTASI NILAI EIGEN"])
+with col3:
+    st.info("3. Solusi Vektor SPL ($\beta$)")
+    st.write("Bobot yang ditemukan dari perkalian Invers Matriks:")
+    df_beta = pd.DataFrame(Beta, index=["Konstanta (b0)", "Bobot Suhu (b1)", "Bobot Hujan (b2)"], columns=["Nilai"])
+    st.dataframe(df_beta)
 
-with tab_grafik:
-    col_chart, col_data = st.columns([2, 1])
-    
-    with col_chart:
-        st.write("### 📈 Grafik Laju Pertumbuhan Populasi")
-        st.line_chart(df, color=["#FF4B4B", "#38ef7d", "#1E4620"])
-        st.info("💡 **Analisis SDG 15:** Geser parameter di sebelah kiri. Jika tingkat bertahan hidup bayi sangat rendah, grafik akan menukik tajam menuju kepunahan.")
-        
-    with col_data:
-        st.write("### 📋 Tabel Data (Ekor)")
-        st.dataframe(df.astype(int), use_container_width=True)
+# --- 4. KALKULATOR PREDIKSI MASA DEPAN ---
+st.divider()
+st.write("### 🔮 Simulator Prediksi Karhutla Kalimantan (Masa Depan)")
+st.write("Berdasarkan Invers Matriks di atas, sistem telah menemukan Sistem Persamaan Linier baru: **$Y = b_0 + b_1(Suhu) + b_2(Hujan)$**")
 
-with tab_teori:
-    st.write("### Landasan Teori: Matriks dan Nilai Eigen")
+col_input1, col_input2, col_hasil = st.columns(3)
+with col_input1:
+    input_suhu = st.number_input("Prediksi Suhu Ekstrem (°C):", value=37.0, step=0.5)
+with col_input2:
+    input_hujan = st.number_input("Prediksi Curah Hujan (mm):", value=10.0, step=10.0)
+
+with col_hasil:
+    # Memasukkan input baru ke dalam perkalian matriks
+    vektor_input = np.array([1, input_suhu, input_hujan])
+    prediksi_y = np.dot(vektor_input, Beta)
     
-    st.write("#### 1. Pembentukan Matriks Leslie ($L$)")
-    st.write("Matriks dibentuk dari laju reproduksi (baris 1) dan laju kelangsungan hidup (sub-diagonal).")
-    st.dataframe(pd.DataFrame(L).style.format("{:.2f}"))
-    
-    st.write("#### 2. Pencarian Nilai Eigen ($\lambda$)")
-    st.write("Dalam Ilmu Lingkungan, kita tidak perlu mengalikan matriks ratusan kali untuk tahu apakah hewan akan punah. Kita cukup mencari **Nilai Eigen Terbesar** dari Matriks $L$.")
-    
-    # EKSEKUSI PENCARIAN NILAI EIGEN
-    nilai_eigen, vektor_eigen = np.linalg.eig(L)
-    eigen_dominan = max(np.real(nilai_eigen))
-    
-    st.success(f"Ditemukan Nilai Eigen Dominan ($\lambda$) = **{eigen_dominan:.4f}**")
-    
-    if eigen_dominan > 1:
-        st.write("🟢 **Status:** $\lambda > 1$ (Populasi akan terus bertambah dan lestari).")
-    elif eigen_dominan == 1:
-        st.write("🟡 **Status:** $\lambda = 1$ (Populasi stagnan/stabil).")
+    st.warning("🚨 **Estimasi Hutan Terbakar:**")
+    st.header(f"{max(0, prediksi_y):,.0f} Hektar")
+    if prediksi_y > 10000:
+        st.error("Status: BENCANA NASIONAL (SDG 15 Terancam Kritis!)")
     else:
-        st.write("🔴 **Status:** $\lambda < 1$ (Spesies terancam punah! Perlu intervensi konservasi).")
+        st.success("Status: Terkendali (Masih dalam batas mitigasi)")

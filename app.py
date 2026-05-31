@@ -1,112 +1,96 @@
 import streamlit as st
 import numpy as np
-from PIL import Image
-import io
+import pandas as pd
 
-# --- 1. SETUP & CUSTOM CSS (UI MODERN) ---
-st.set_page_config(page_title="Fauna-Clear | SVD Denoising", layout="wide", page_icon="🐾")
+# --- 1. KONFIGURASI TAMPILAN WEB ---
+st.set_page_config(page_title="Fauna-Matrix | SDG 15", layout="wide", page_icon="🐒")
 
 st.markdown("""
     <style>
-    /* Tema Gelap Elegan */
-    .stApp { background-color: #0E1117; color: #FAFAFA; }
-    
-    /* Header Gradasi */
-    .hero-box { 
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
-        padding: 40px; 
-        border-radius: 20px; 
-        text-align: center; 
-        box-shadow: 0px 10px 20px rgba(0,0,0,0.3);
-        margin-bottom: 30px;
-    }
-    .hero-title { color: white; font-size: 3.5rem; font-weight: 900; margin-bottom: 0px; font-family: 'Arial Black', sans-serif; letter-spacing: 2px;}
-    .hero-subtitle { color: #E8F5E9; font-size: 1.3rem; font-weight: 500; }
-    
-    /* Box Metrik */
-    div[data-testid="metric-container"] {
-        background-color: #1E2127; border: 1px solid #333; padding: 15px; border-radius: 10px;
-    }
+    .judul { font-size: 2.8rem; font-weight: 900; color: #1E4620; text-align: center; margin-bottom: 0px; }
+    .subjudul { font-size: 1.2rem; color: #4A7C59; text-align: center; margin-bottom: 30px; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. HEADER APLIKASI ---
-st.markdown("""
-<div class="hero-box">
-    <p class="hero-title">🐾 Fauna-Clear SVD</p>
-    <p class="hero-subtitle">Sistem Pembersihan Derau Citra Kamera Jebak Satwa Liar (SDG 15)</p>
-</div>
-""", unsafe_allow_html=True)
+st.markdown('<p class="judul">🐒 Fauna-Matrix Predictor</p>', unsafe_allow_html=True)
+st.markdown('<p class="subjudul">Pemodelan Populasi Satwa Langka (SDG 15) Menggunakan Matriks Leslie & Nilai Eigen</p>', unsafe_allow_html=True)
 
-# --- 3. TAB NAVIGASI ---
-tab1, tab2 = st.tabs(["🎛️ WORKSPACE DENOISING", "📖 LANDASAN ALJABAR LINIER"])
+# --- 2. PANEL INPUT (SIDEBAR) ---
+st.sidebar.header("⚙️ 1. Vektor Populasi Awal")
+bayi = st.sidebar.number_input("Usia Bayi (0-1 Tahun):", value=100)
+remaja = st.sidebar.number_input("Usia Remaja (1-3 Tahun):", value=50)
+dewasa = st.sidebar.number_input("Usia Dewasa (>3 Tahun):", value=30)
 
-with tab1:
-    st.info("💡 **Skenario Demo:** Unggah foto hewan. Sistem akan mensimulasikan foto tersebut sebagai hasil jepretan malam hari yang penuh bintik (Noise), lalu menggunakan SVD untuk membersihkannya.")
+st.sidebar.header("🧬 2. Parameter Matriks Leslie")
+st.sidebar.write("Tingkat Kelahiran (Fekunditas):")
+f1 = st.sidebar.slider("F1 (Bayi)", 0.0, 2.0, 0.0)
+f2 = st.sidebar.slider("F2 (Remaja)", 0.0, 5.0, 1.2)
+f3 = st.sidebar.slider("F3 (Dewasa)", 0.0, 5.0, 2.0)
+
+st.sidebar.write("Tingkat Bertahan Hidup (Survival):")
+s1 = st.sidebar.slider("S1 (Bayi ke Remaja)", 0.0, 1.0, 0.6)
+s2 = st.sidebar.slider("S2 (Remaja ke Dewasa)", 0.0, 1.0, 0.8)
+
+# --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
+# Membentuk Matriks Leslie (L) berordo 3x3
+L = np.array([
+    [f1, f2, f3],
+    [s1, 0.0, 0.0],
+    [0.0, s2, 0.0]
+])
+
+# Membentuk Vektor Populasi Awal (N0)
+N0 = np.array([bayi, remaja, dewasa])
+
+st.divider()
+tahun_prediksi = st.slider("🎯 Proyeksi Pertumbuhan (Tahun ke depan):", 1, 50, 15)
+
+# Perulangan Perkalian Matriks (Dot Product)
+hasil = [N0]
+N_curr = N0
+for i in range(tahun_prediksi):
+    # Rumus Alin: N_next = L * N_curr
+    N_next = np.dot(L, N_curr) 
+    hasil.append(N_next)
+    N_curr = N_next
+
+df = pd.DataFrame(hasil, columns=["Usia Bayi", "Usia Remaja", "Usia Dewasa"])
+df.index.name = "Tahun"
+
+# --- 4. TAMPILAN HASIL (DASHBOARD) ---
+tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PROYEKSI", "🧮 BUKTI KOMPUTASI NILAI EIGEN"])
+
+with tab_grafik:
+    col_chart, col_data = st.columns([2, 1])
     
-    # Kotak Upload di tengah
-    col_up1, col_up2, col_up3 = st.columns([1, 2, 1])
-    with col_up2:
-        uploaded_file = st.file_uploader("📸 Unggah Foto Satwa Liar", type=["jpg", "png"])
+    with col_chart:
+        st.write("### 📈 Grafik Laju Pertumbuhan Populasi")
+        st.line_chart(df, color=["#FF4B4B", "#38ef7d", "#1E4620"])
+        st.info("💡 **Analisis SDG 15:** Geser parameter di sebelah kiri. Jika tingkat bertahan hidup bayi sangat rendah, grafik akan menukik tajam menuju kepunahan.")
+        
+    with col_data:
+        st.write("### 📋 Tabel Data (Ekor)")
+        st.dataframe(df.astype(int), use_container_width=True)
 
-    if uploaded_file is not None:
-        # Buka Gambar dan Jadikan Grayscale
-        image_asli = Image.open(uploaded_file).convert('L')
-        A = np.array(image_asli)
-        
-        # --- SIMULASI NOISE KAMERA JEBAK ---
-        # Membuat derau (bintik acak) menggunakan distribusi normal matriks
-        noise = np.random.normal(0, 40, A.shape) 
-        A_noisy = A + noise
-        A_noisy = np.clip(A_noisy, 0, 255).astype(np.uint8) # Jaga di rentang piksel
-        
-        st.write("---")
-        st.markdown("### 🎚️ Panel Kontrol Dekomposisi Matriks")
-        
-        # --- PROSES SVD ---
-        U, S, Vt = np.linalg.svd(A_noisy, full_matrices=False)
-        max_k = len(S)
-        
-        # Slider dengan desain yang lebih rapi
-        k = st.slider("Tentukan Jumlah Nilai Singular (k) untuk merekonstruksi citra:", 1, max_k, max_k // 10)
-        
-        # Rekonstruksi Matriks Denoise
-        Ak = np.dot(U[:, :k], np.dot(np.diag(S[:k]), Vt[:k, :]))
-        Ak = np.clip(Ak, 0, 255).astype(np.uint8)
-        
-        # --- TAMPILAN DASHBOARD HASIL ---
-        col_img1, col_img2 = st.columns(2)
-        
-        with col_img1:
-            st.markdown("#### 🌙 Citra Kamera Jebak (Noisy)")
-            st.image(A_noisy, use_column_width=True)
-            st.caption("Gambar penuh bintik karena kurang cahaya / cuaca buruk.")
-            
-        with col_img2:
-            st.markdown(f"#### 🐾 Hasil Pembersihan SVD (k={k})")
-            st.image(Ak, use_column_width=True)
-            st.caption("Gambar setelah dibersihkan menggunakan pemotongan matriks.")
-            
-        # Tampilan Metrik ala Dashboard
-        st.markdown("### 📊 Analisis Komputasi")
-        col_m1, col_m2, col_m3 = st.columns(3)
-        col_m1.metric("Dimensi Matriks", f"{A.shape[0]} x {A.shape[1]}")
-        col_m2.metric("Nilai Singular Terbuang", f"{max_k - k} Fitur")
-        
-        # Rumus sederhana: semakin kecil k, semakin banyak derau yang dibuang
-        persentase_noise_hilang = (1 - (k / max_k)) * 100
-        col_m3.metric("Estimasi Derau Dibuang", f"{persentase_noise_hilang:.1f} %")
-
-        # Tombol Download
-        buf = io.BytesIO()
-        Image.fromarray(Ak).save(buf, format="PNG")
-        st.download_button("📥 Simpan Bukti Pemantauan", buf.getvalue(), "satwa_terpantau.png", "image/png", use_container_width=True)
-
-with tab2:
-    st.markdown("### 🧮 Bagaimana SVD Membersihkan *Noise*?")
-    st.write("""
-    1. **Matriks Citra:** Foto *camera trap* malam hari (yang berbintik) dibaca sebagai matriks $A$.
-    2. **Dekomposisi SVD ($A = U \cdot \Sigma \cdot V^T$):** Matriks tersebut dipecah. Matriks diagonal $\Sigma$ menyimpan 'Nilai Singular'.
-    3. **Pemisahan Signal & Noise:** Dalam Aljabar Linier, nilai singular yang **besar** mewakili informasi visual utama (bentuk badan hewan, corak mata). Sedangkan nilai singular yang **sangat kecil** biasanya merupakan *noise* (bintik-bintik derau sensor kamera).
-    4. **Pemotongan (Truncation):** Dengan memotong matriks dan hanya mengambil sejumlah $k$ nilai singular terbesar, kita membuang nilai-nilai kecil tersebut. Hasilnya saat matriks dikalikan kembali, bentuk hewan tetap ada, tetapi *noise*-nya hilang!
-    """)
+with tab_teori:
+    st.write("### Landasan Teori: Matriks dan Nilai Eigen")
+    
+    st.write("#### 1. Pembentukan Matriks Leslie ($L$)")
+    st.write("Matriks dibentuk dari laju reproduksi (baris 1) dan laju kelangsungan hidup (sub-diagonal).")
+    st.dataframe(pd.DataFrame(L).style.format("{:.2f}"))
+    
+    st.write("#### 2. Pencarian Nilai Eigen ($\lambda$)")
+    st.write("Dalam Ilmu Lingkungan, kita tidak perlu mengalikan matriks ratusan kali untuk tahu apakah hewan akan punah. Kita cukup mencari **Nilai Eigen Terbesar** dari Matriks $L$.")
+    
+    # EKSEKUSI PENCARIAN NILAI EIGEN
+    nilai_eigen, vektor_eigen = np.linalg.eig(L)
+    eigen_dominan = max(np.real(nilai_eigen))
+    
+    st.success(f"Ditemukan Nilai Eigen Dominan ($\lambda$) = **{eigen_dominan:.4f}**")
+    
+    if eigen_dominan > 1:
+        st.write("🟢 **Status:** $\lambda > 1$ (Populasi akan terus bertambah dan lestari).")
+    elif eigen_dominan == 1:
+        st.write("🟡 **Status:** $\lambda = 1$ (Populasi stagnan/stabil).")
+    else:
+        st.write("🔴 **Status:** $\lambda < 1$ (Spesies terancam punah! Perlu intervensi konservasi).")

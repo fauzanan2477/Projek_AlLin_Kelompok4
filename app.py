@@ -2,91 +2,83 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-# --- 1. KONFIGURASI TAMPILAN WEB ---
+# --- KONFIGURASI WEB ---
 st.set_page_config(page_title="Eco-Rank | SDG 15", layout="wide", page_icon="🐆")
 
-st.markdown("""
-    <style>
-    .judul { font-size: 2.8rem; font-weight: 900; color: #1E4620; text-align: center; margin-bottom: 0px; }
-    .subjudul { font-size: 1.2rem; color: #4A7C59; text-align: center; margin-bottom: 30px; }
-    </style>
-""", unsafe_allow_html=True)
+st.markdown('<h1 style="color:#1E4620; text-align:center;">🐆 Eco-Rank: Spesies Kunci (Dinamis)</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#4A7C59;">Analisis Jaring Makanan Hutan via Matriks & Vektor Eigen</p>', unsafe_allow_html=True)
 
-st.markdown('<p class="judul">🐆 Eco-Rank: Deteksi Spesies Kunci</p>', unsafe_allow_html=True)
-st.markdown('<p class="subjudul">Analisis Sentralitas Ekosistem Hutan (SDG 15) Menggunakan Matriks & Vektor Eigen</p>', unsafe_allow_html=True)
+# --- 1. INPUT SPESIES DINAMIS (BEBAS CUSTOM) ---
+st.write("### ⚙️ 1. Tentukan Ekosistem (Dinamis)")
+st.info("Ketik nama-nama spesies yang ada di ekosistem hutanmu, pisahkan dengan tanda koma (,). Kamu bebas menambah/mengurangi spesies!")
 
-# --- 2. PANEL INPUT (SIDEBAR) ---
-st.sidebar.header("⚙️ Kekuatan Interaksi Matriks")
-st.sidebar.write("Atur seberapa besar ketergantungan (aliran energi) antar spesies di ekosistem ini.")
+# Input dinamis
+input_spesies = st.text_input("Daftar Spesies Ekosistem:", "Pohon Buah, Serangga, Burung Kecil, Ular, Harimau")
 
-st.sidebar.subheader("Tingkat Konsumsi Herbivora:")
-w_pohon_monyet = st.sidebar.slider("Ketergantungan Monyet pada Pohon", 0.0, 5.0, 3.0)
-w_pohon_rangkong = st.sidebar.slider("Ketergantungan Rangkong pada Pohon", 0.0, 5.0, 2.0)
+# Membersihkan dan memisahkan teks menjadi List (Array)
+spesies_list = [s.strip() for s in input_spesies.split(",") if s.strip() != ""]
 
-st.sidebar.subheader("Tingkat Konsumsi Karnivora:")
-w_monyet_macan = st.sidebar.slider("Macan Dahan memangsa Monyet", 0.0, 5.0, 4.0)
-w_rangkong_macan = st.sidebar.slider("Macan Dahan memangsa Rangkong", 0.0, 5.0, 1.5)
-w_macan_harimau = st.sidebar.slider("Harimau memangsa Macan Dahan", 0.0, 5.0, 5.0)
+# --- 2. EDITOR MATRIKS INTERAKTIF (SEPERTI EXCEL) ---
+st.write("---")
+st.write("### 🕸️ 2. Matriks Porsi Makan (0% - 100%)")
+st.write("Isi tabel di bawah. **Baris** adalah Predator, **Kolom** adalah Mangsanya. Misalnya: Jika Harimau (Baris) memakan 100% Rusa (Kolom), isi dengan angka 100.")
 
-# --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
-spesies = ["Pohon Ara", "Monyet", "Burung Rangkong", "Macan Dahan", "Harimau Sumatera"]
+# Membuat DataFrame kosong berukuran dinamis N x N
+df_awal = pd.DataFrame(0.0, index=spesies_list, columns=spesies_list)
 
-# Membentuk Matriks Ketetanggaan Berbobot (Adjacency Matrix) 5x5
-# Baris: Dimakan oleh, Kolom: Yang memakan
-A = np.array([
-    [0.0, w_pohon_monyet, w_pohon_rangkong, 0.0, 0.0],
-    [0.0, 0.0, 0.0, w_monyet_macan, 0.0],
-    [0.0, 0.0, 0.0, w_rangkong_macan, 0.0],
-    [0.0, 0.0, 0.0, 0.0, w_macan_harimau],
-    [0.0, 0.0, 0.0, 0.0, 0.0]
-])
+# Menampilkan Editor Tabel Excel di dalam Streamlit
+df_matriks = st.data_editor(df_awal, use_container_width=True)
 
-# Agar Vektor Eigen bekerja sempurna layaknya PageRank, matriks harus distabilkan (Damping Factor / Ekosistem Terbuka)
-# Kita tambahkan nilai kecil agar tidak ada baris/kolom yang benar-benar 0
-A = A + 0.1 
-
-# --- 4. TAMPILAN HASIL (DASHBOARD) ---
-tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PERINGKAT", "🧮 BUKTI MATRIKS & VEKTOR EIGEN"])
-
-with tab_grafik:
-    col_chart, col_data = st.columns([2, 1])
+if st.button("Mulai Komputasi Nilai Eigen", type="primary"):
+    
+    # --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
+    # Mengambil nilai angka dari tabel
+    A = df_matriks.values
+    
+    # Normalisasi (Membagi persentase dengan 100) dan Transpose Matriks
+    # Transpose diperlukan karena energi mengalir dari Mangsa KE Predator
+    A_transpose = (A / 100.0).T 
+    
+    # Mencegah matriks kosong (mengurangi error ekosistem tertutup)
+    A_stabil = A_transpose + 0.01 
     
     # EKSEKUSI PENCARIAN NILAI & VEKTOR EIGEN
-    nilai_eigen, vektor_eigen = np.linalg.eig(A)
+    nilai_eigen, vektor_eigen = np.linalg.eig(A_stabil)
     
     # Ambil Vektor Eigen yang bersesuaian dengan Nilai Eigen Terbesar
     idx_max = np.argmax(np.abs(nilai_eigen))
+    eigen_terbesar = np.real(nilai_eigen[idx_max])
     vektor_sentralitas = np.abs(np.real(vektor_eigen[:, idx_max]))
     
-    # Normalisasi skor menjadi persentase (Total 100%)
+    # Mengubah Vektor menjadi persentase skor (Total 100%)
     skor_akhir = (vektor_sentralitas / np.sum(vektor_sentralitas)) * 100
     
+    # Memasukkan hasil ke dalam tabel baru
     df_ranking = pd.DataFrame({
-        "Spesies": spesies,
+        "Spesies": spesies_list,
         "Skor Kepentingan (%)": skor_akhir
     }).sort_values(by="Skor Kepentingan (%)", ascending=False).reset_index(drop=True)
 
-    with col_chart:
-        st.write("### 🏆 Peringkat Spesies Kunci Ekosistem")
-        st.bar_chart(df_ranking.set_index("Spesies"))
-        st.info("💡 **Analisis SDG 15:** Geser kekuatan rantai makanan di panel kiri. Spesies dengan persentase tertinggi adalah **Spesies Kunci**. Jika pemerintah membiarkan spesies tersebut punah, seluruh jaring-jaring kehidupan di hutan ini akan runtuh berantakan!")
+    # --- 4. TAMPILAN DASHBOARD HASIL ---
+    st.divider()
+    tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PERINGKAT", "🧮 BUKTI MATRIKS & VEKTOR EIGEN"])
+    
+    with tab_grafik:
+        col_chart, col_data = st.columns([2, 1])
+        with col_chart:
+            st.write("### 🏆 Peringkat Prioritas Konservasi")
+            st.bar_chart(df_ranking.set_index("Spesies"))
+            
+        with col_data:
+            spesies_kunci = df_ranking.iloc[0]["Spesies"]
+            st.error(f"🚨 **SPESIES KUNCI: {spesies_kunci.upper()}**")
+            st.write("Jika spesies di atas punah, keseimbangan matriks akan runtuh dan menghancurkan ekosistem hutan.")
+            st.dataframe(df_ranking.style.format({"Skor Kepentingan (%)": "{:.2f}%"}), use_container_width=True)
+            
+    with tab_teori:
+        st.write("### Landasan Teori (Aljabar Linier)")
+        st.write("Aplikasi ini tidak merangking secara asal. Program mencari **Nilai Eigen Terbesar (Principal Eigenvalue)** dari matriks persentase makanan yang kamu isi.")
         
-    with col_data:
-        st.write("### 📋 Tabel Vektor Sentralitas")
-        st.dataframe(df_ranking.style.format({"Skor Kepentingan (%)": "{:.2f}%"}), use_container_width=True)
-        spesies_kunci = df_ranking.iloc[0]["Spesies"]
-        st.error(f"🚨 **PRIORITAS KONSERVASI: {spesies_kunci}**")
-
-with tab_teori:
-    st.write("### Landasan Teori: Vektor Eigen Utama (Principal Eigenvector)")
-    
-    st.write("#### 1. Pembentukan Matriks Ekosistem ($A$)")
-    st.write("Nilai-nilai dari input *slider* disusun menjadi **Matriks Ketetanggaan** berordo $5 \\times 5$:")
-    df_A = pd.DataFrame(A, index=spesies, columns=spesies)
-    st.dataframe(df_A.style.format("{:.1f}"))
-    
-    st.write("#### 2. Persamaan Karakteristik & Vektor Eigen ($Ax = \lambda x$)")
-    st.write("Menghitung tingkat kepentingan hewan tidak bisa hanya dengan menjumlahkan siapa memakan siapa (skalar). Hewan yang jarang dimakan, namun dimakan oleh *predator yang sangat penting*, akan mendapatkan skor yang tinggi. Hal ini dipecahkan menggunakan komputasi matriks Vektor Eigen.")
-    
-    st.success(f"Sistem menemukan Nilai Eigen Utama ($\lambda$) = **{np.real(nilai_eigen[idx_max]):.4f}**")
-    st.write("Vektor Eigen yang bersesuaian dengan Nilai Eigen tersebut kemudian diekstrak, dan itulah yang menjadi **Skor Kepentingan** pada grafik di halaman depan.")
+        st.success(f"Ditemukan Nilai Eigen Utama ($\lambda$) = **{eigen_terbesar:.4f}**")
+        st.write("Vektor Eigen yang bersesuaian dengan $\lambda$ tersebut kemudian diekstrak. Nilai pada vektor itulah yang menjadi **Skor Kepentingan** pada grafik di halaman depan.")
+        st.latex(r"A \mathbf{x} = \lambda \mathbf{x}")

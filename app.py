@@ -3,82 +3,84 @@ import numpy as np
 import pandas as pd
 
 # --- KONFIGURASI WEB ---
-st.set_page_config(page_title="Eco-Rank | SDG 15", layout="wide", page_icon="🐆")
+st.set_page_config(page_title="AI Fire-Predictor | SDG 15", layout="wide", page_icon="🔥")
 
-st.markdown('<h1 style="color:#1E4620; text-align:center;">🐆 Eco-Rank: Spesies Kunci (Dinamis)</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#4A7C59;">Analisis Jaring Makanan Hutan via Matriks & Vektor Eigen</p>', unsafe_allow_html=True)
+st.markdown('<h1 style="color:#d35400; text-align:center;">🔥 AI Fire-Predictor (Machine Learning)</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#e67e22; font-size:1.2rem;">Prediksi Kebakaran Hutan (SDG 15) Menggunakan SPL & Invers Matriks</p>', unsafe_allow_html=True)
 
-# --- 1. INPUT SPESIES DINAMIS (BEBAS CUSTOM) ---
-st.write("### ⚙️ 1. Tentukan Ekosistem (Dinamis)")
-st.info("Ketik nama-nama spesies yang ada di ekosistem hutanmu, pisahkan dengan tanda koma (,). Kamu bebas menambah/mengurangi spesies!")
+# --- 1. DATA HISTORIS DINAMIS ---
+st.write("### ⚙️ 1. Matriks Data Historis Cuaca & Karhutla")
+st.info("💡 **Tabel Interaktif:** Kamu bisa mengetik langsung di dalam tabel ini, menambah baris baru, atau menghapus data. Rumus Aljabar Linier akan menghitung ulang secara otomatis!")
 
-# Input dinamis
-input_spesies = st.text_input("Daftar Spesies Ekosistem:", "Pohon Buah, Serangga, Burung Kecil, Ular, Harimau")
+# Data Default (Bisa diubah-ubah di web)
+data_awal = pd.DataFrame({
+    "Suhu Udara (°C)": [32.0, 33.5, 34.0, 35.5, 36.0, 37.0],
+    "Curah Hujan (mm)": [200, 150, 100, 50, 20, 5],
+    "Luas Terbakar (Hektar)": [10, 50, 120, 450, 800, 1500]
+})
 
-# Membersihkan dan memisahkan teks menjadi List (Array)
-spesies_list = [s.strip() for s in input_spesies.split(",") if s.strip() != ""]
+# Menampilkan tabel yang bisa di-edit (Dynamic Rows)
+df_edit = st.data_editor(data_awal, num_rows="dynamic", use_container_width=True)
 
-# --- 2. EDITOR MATRIKS INTERAKTIF (SEPERTI EXCEL) ---
-st.write("---")
-st.write("### 🕸️ 2. Matriks Porsi Makan (0% - 100%)")
-st.write("Isi tabel di bawah. **Baris** adalah Predator, **Kolom** adalah Mangsanya. Misalnya: Jika Harimau (Baris) memakan 100% Rusa (Kolom), isi dengan angka 100.")
+# --- 2. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
+try:
+    # Membentuk Vektor Target Y (Luas Terbakar)
+    Y = df_edit["Luas Terbakar (Hektar)"].values
 
-# Membuat DataFrame kosong berukuran dinamis N x N
-df_awal = pd.DataFrame(0.0, index=spesies_list, columns=spesies_list)
+    # Membentuk Matriks Fitur X (Kolom 1 adalah Konstanta angka 1)
+    # Ordo Matriks X menyesuaikan jumlah baris yang ada di tabel
+    X = np.column_stack((np.ones(len(df_edit)), df_edit["Suhu Udara (°C)"], df_edit["Curah Hujan (mm)"]))
 
-# Menampilkan Editor Tabel Excel di dalam Streamlit
-df_matriks = st.data_editor(df_awal, use_container_width=True)
+    # RUMUS PERSAMAAN NORMAL (Normal Equation): Beta = (X^T * X)^-1 * X^T * Y
+    X_T = X.T                                   # 1. Transpose Matriks X
+    X_T_X = np.dot(X_T, X)                      # 2. Perkalian Matriks
+    X_T_X_inv = np.linalg.inv(X_T_X)            # 3. MENCARI INVERS MATRIKS (ALIN INTI)
+    X_T_Y = np.dot(X_T, Y)                      # 4. Perkalian Vektor
+    Beta = np.dot(X_T_X_inv, X_T_Y)             # 5. Hasil Vektor Koefisien SPL (Beta)
 
-if st.button("Mulai Komputasi Nilai Eigen", type="primary"):
-    
-    # --- 3. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
-    # Mengambil nilai angka dari tabel
-    A = df_matriks.values
-    
-    # Normalisasi (Membagi persentase dengan 100) dan Transpose Matriks
-    # Transpose diperlukan karena energi mengalir dari Mangsa KE Predator
-    A_transpose = (A / 100.0).T 
-    
-    # Mencegah matriks kosong (mengurangi error ekosistem tertutup)
-    A_stabil = A_transpose + 0.01 
-    
-    # EKSEKUSI PENCARIAN NILAI & VEKTOR EIGEN
-    nilai_eigen, vektor_eigen = np.linalg.eig(A_stabil)
-    
-    # Ambil Vektor Eigen yang bersesuaian dengan Nilai Eigen Terbesar
-    idx_max = np.argmax(np.abs(nilai_eigen))
-    eigen_terbesar = np.real(nilai_eigen[idx_max])
-    vektor_sentralitas = np.abs(np.real(vektor_eigen[:, idx_max]))
-    
-    # Mengubah Vektor menjadi persentase skor (Total 100%)
-    skor_akhir = (vektor_sentralitas / np.sum(vektor_sentralitas)) * 100
-    
-    # Memasukkan hasil ke dalam tabel baru
-    df_ranking = pd.DataFrame({
-        "Spesies": spesies_list,
-        "Skor Kepentingan (%)": skor_akhir
-    }).sort_values(by="Skor Kepentingan (%)", ascending=False).reset_index(drop=True)
+    sukses_hitung = True
+except np.linalg.LinAlgError:
+    st.error("🚨 Gagal memproses! Determinan matriks bernilai 0 (Matriks Singular). Pastikan data di tabel bervariasi.")
+    sukses_hitung = False
 
-    # --- 4. TAMPILAN DASHBOARD HASIL ---
+if sukses_hitung:
+    # --- 3. BUKTI KOMPUTASI UNTUK DOSEN ---
     st.divider()
-    tab_grafik, tab_teori = st.tabs(["📊 DASHBOARD PERINGKAT", "🧮 BUKTI MATRIKS & VEKTOR EIGEN"])
+    st.write("### 🧮 2. Bukti Operasi Aljabar Linier")
+    col1, col2, col3 = st.columns(3)
     
-    with tab_grafik:
-        col_chart, col_data = st.columns([2, 1])
-        with col_chart:
-            st.write("### 🏆 Peringkat Prioritas Konservasi")
-            st.bar_chart(df_ranking.set_index("Spesies"))
-            
-        with col_data:
-            spesies_kunci = df_ranking.iloc[0]["Spesies"]
-            st.error(f"🚨 **SPESIES KUNCI: {spesies_kunci.upper()}**")
-            st.write("Jika spesies di atas punah, keseimbangan matriks akan runtuh dan menghancurkan ekosistem hutan.")
-            st.dataframe(df_ranking.style.format({"Skor Kepentingan (%)": "{:.2f}%"}), use_container_width=True)
-            
-    with tab_teori:
-        st.write("### Landasan Teori (Aljabar Linier)")
-        st.write("Aplikasi ini tidak merangking secara asal. Program mencari **Nilai Eigen Terbesar (Principal Eigenvalue)** dari matriks persentase makanan yang kamu isi.")
+    with col1:
+        st.write("**Matriks Invers $(X^T X)^{-1}$**")
+        st.dataframe(pd.DataFrame(X_T_X_inv).style.format("{:.4f}"))
         
-        st.success(f"Ditemukan Nilai Eigen Utama ($\lambda$) = **{eigen_terbesar:.4f}**")
-        st.write("Vektor Eigen yang bersesuaian dengan $\lambda$ tersebut kemudian diekstrak. Nilai pada vektor itulah yang menjadi **Skor Kepentingan** pada grafik di halaman depan.")
-        st.latex(r"A \mathbf{x} = \lambda \mathbf{x}")
+    with col2:
+        st.write("**Vektor Solusi SPL ($\beta$)**")
+        df_beta = pd.DataFrame(Beta, index=["Konstanta (b0)", "Bobot Suhu (b1)", "Bobot Hujan (b2)"], columns=["Nilai"])
+        st.dataframe(df_beta.style.format("{:.2f}"))
+        
+    with col3:
+        st.write("**Rumus AI yang Terbentuk:**")
+        st.latex(r"Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2")
+        st.info("Invers matriks berhasil memecahkan Sistem Persamaan Linier yang kompleks menjadi sebuah rumus prediksi mutakhir!")
+
+    # --- 4. DASHBOARD PREDIKSI INTERAKTIF ---
+    st.divider()
+    st.write("### 🔮 3. Simulator Prediksi Kebakaran Hutan")
+    
+    col_input1, col_input2, col_hasil = st.columns(3)
+    with col_input1:
+        input_suhu = st.number_input("Prediksi Suhu Ekstrem (°C):", value=38.0, step=0.5)
+    with col_input2:
+        input_hujan = st.number_input("Prediksi Curah Hujan (mm):", value=0.0, step=10.0)
+
+    with col_hasil:
+        # Menghitung prediksi menggunakan perkalian Vektor (Dot Product)
+        vektor_input = np.array([1, input_suhu, input_hujan])
+        prediksi_y = np.dot(vektor_input, Beta)
+        
+        st.warning("🚨 **Estimasi Luas Hutan Terbakar:**")
+        st.header(f"{max(0, prediksi_y):,.0f} Hektar")
+        if prediksi_y > 1000:
+            st.error("🔥 STATUS: SIAGA 1 (Darurat SDG 15!)")
+        else:
+            st.success("🌱 STATUS: Aman Terkendali")

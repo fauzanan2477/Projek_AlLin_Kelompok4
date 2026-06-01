@@ -1,86 +1,114 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import time
 
-# --- KONFIGURASI WEB ---
-st.set_page_config(page_title="AI Fire-Predictor | SDG 15", layout="wide", page_icon="🔥")
+# --- 1. KONFIGURASI & TEMA DASHBOARD ---
+st.set_page_config(page_title="Prediksi Karhutla", layout="wide", page_icon="🌲")
 
-st.markdown('<h1 style="color:#d35400; text-align:center;">🔥 AI Fire-Predictor (Machine Learning)</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#e67e22; font-size:1.2rem;">Prediksi Kebakaran Hutan (SDG 15) Menggunakan SPL & Invers Matriks</p>', unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    .main-title { font-size: 3rem; font-weight: 900; color: #d35400; text-align: center; margin-bottom: 0; }
+    .sub-title { font-size: 1.2rem; color: #e67e22; text-align: center; margin-bottom: 30px; }
+    .metric-card { background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #d35400; }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- 1. DATA HISTORIS DINAMIS ---
-st.write("### ⚙️ 1. Matriks Data Historis Cuaca & Karhutla")
-st.info("💡 **Tabel Interaktif:** Kamu bisa mengetik langsung di dalam tabel ini, menambah baris baru, atau menghapus data. Rumus Aljabar Linier akan menghitung ulang secara otomatis!")
+st.markdown('<p class="main-title">🌲 Sistem Prediksi Karhutla</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Simulasi Mitigasi Bencana (SDG 15) Berbasis Aljabar Linier & SPL</p>', unsafe_allow_html=True)
 
-# Data Default (Bisa diubah-ubah di web)
+# --- 2. DATA HISTORIS (BISA DI-EDIT AUDIENS) ---
+st.write("### 📅 1. Perekaman Data Historis (Interaktif)")
+st.info("Ketik langsung pada tabel untuk mengubah data historis. Algoritma matriks akan beradaptasi secara otomatis!")
+
 data_awal = pd.DataFrame({
-    "Suhu Udara (°C)": [32.0, 33.5, 34.0, 35.5, 36.0, 37.0],
-    "Curah Hujan (mm)": [200, 150, 100, 50, 20, 5],
-    "Luas Terbakar (Hektar)": [10, 50, 120, 450, 800, 1500]
+    "Bulan": ["Januari", "Februari", "Maret", "April", "Mei", "Juni"],
+    "Suhu Udara (°C)": [31.0, 31.5, 32.5, 33.5, 34.5, 35.5],
+    "Curah Hujan (mm)": [250, 200, 150, 80, 40, 10],
+    "Luas Terbakar (Ha)": [20, 50, 150, 500, 1200, 3500]
 })
 
-# Menampilkan tabel yang bisa di-edit (Dynamic Rows)
 df_edit = st.data_editor(data_awal, num_rows="dynamic", use_container_width=True)
 
-# --- 2. LOGIKA MATEMATIKA (ALJABAR LINIER) ---
+# --- 3. KOMPUTASI ALJABAR LINIER (CORE ENGINE) ---
 try:
-    # Membentuk Vektor Target Y (Luas Terbakar)
-    Y = df_edit["Luas Terbakar (Hektar)"].values
-
-    # Membentuk Matriks Fitur X (Kolom 1 adalah Konstanta angka 1)
-    # Ordo Matriks X menyesuaikan jumlah baris yang ada di tabel
+    Y = df_edit["Luas Terbakar (Ha)"].values
     X = np.column_stack((np.ones(len(df_edit)), df_edit["Suhu Udara (°C)"], df_edit["Curah Hujan (mm)"]))
 
-    # RUMUS PERSAMAAN NORMAL (Normal Equation): Beta = (X^T * X)^-1 * X^T * Y
-    X_T = X.T                                   # 1. Transpose Matriks X
-    X_T_X = np.dot(X_T, X)                      # 2. Perkalian Matriks
-    X_T_X_inv = np.linalg.inv(X_T_X)            # 3. MENCARI INVERS MATRIKS (ALIN INTI)
-    X_T_Y = np.dot(X_T, Y)                      # 4. Perkalian Vektor
-    Beta = np.dot(X_T_X_inv, X_T_Y)             # 5. Hasil Vektor Koefisien SPL (Beta)
-
-    sukses_hitung = True
+    # SPL & Invers Matriks: Beta = (X^T * X)^-1 * X^T * Y
+    X_T = X.T
+    X_T_X_inv = np.linalg.inv(np.dot(X_T, X))
+    Beta = np.dot(X_T_X_inv, np.dot(X_T, Y))
+    sukses = True
 except np.linalg.LinAlgError:
-    st.error("🚨 Gagal memproses! Determinan matriks bernilai 0 (Matriks Singular). Pastikan data di tabel bervariasi.")
-    sukses_hitung = False
+    st.error("🚨 Matriks Singular! Determinan bernilai 0. Pastikan data suhu/hujan bervariasi.")
+    sukses = False
 
-if sukses_hitung:
-    # --- 3. BUKTI KOMPUTASI UNTUK DOSEN ---
+if sukses:
+    # --- 4. PANEL SIMULASI INTERAKTIF ---
     st.divider()
-    st.write("### 🧮 2. Bukti Operasi Aljabar Linier")
-    col1, col2, col3 = st.columns(3)
+    st.write("### 🎮 2. Simulasi Prediksi Masa Depan")
+    st.write("Pilih skenario cuaca untuk bulan depan, atau atur sendiri angkanya secara kustom untuk melihat respon sistem!")
     
-    with col1:
-        st.write("**Matriks Invers $(X^T X)^{-1}$**")
-        st.dataframe(pd.DataFrame(X_T_X_inv).style.format("{:.4f}"))
-        
-    with col2:
-        st.write("**Vektor Solusi SPL ($\beta$)**")
-        df_beta = pd.DataFrame(Beta, index=["Konstanta (b0)", "Bobot Suhu (b1)", "Bobot Hujan (b2)"], columns=["Nilai"])
-        st.dataframe(df_beta.style.format("{:.2f}"))
-        
-    with col3:
-        st.write("**Rumus AI yang Terbentuk:**")
-        st.latex(r"Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2")
-        st.info("Invers matriks berhasil memecahkan Sistem Persamaan Linier yang kompleks menjadi sebuah rumus prediksi mutakhir!")
-
-    # --- 4. DASHBOARD PREDIKSI INTERAKTIF ---
-    st.divider()
-    st.write("### 🔮 3. Simulator Prediksi Kebakaran Hutan")
+    # Fitur Interaktif: Pilihan Skenario
+    skenario = st.radio("Pilih Skenario Cuaca BMKG:", 
+                        ["⛅ Normal (Kemarau Biasa)", "🔥 El Nino Ekstrem (Kering & Panas)", "🌧️ La Nina (Basah)", "🎛️ Kustom (Geser Sendiri)"], 
+                        horizontal=True)
     
-    col_input1, col_input2, col_hasil = st.columns(3)
-    with col_input1:
-        input_suhu = st.number_input("Prediksi Suhu Ekstrem (°C):", value=38.0, step=0.5)
-    with col_input2:
-        input_hujan = st.number_input("Prediksi Curah Hujan (mm):", value=0.0, step=10.0)
-
-    with col_hasil:
-        # Menghitung prediksi menggunakan perkalian Vektor (Dot Product)
-        vektor_input = np.array([1, input_suhu, input_hujan])
-        prediksi_y = np.dot(vektor_input, Beta)
-        
-        st.warning("🚨 **Estimasi Luas Hutan Terbakar:**")
-        st.header(f"{max(0, prediksi_y):,.0f} Hektar")
-        if prediksi_y > 1000:
-            st.error("🔥 STATUS: SIAGA 1 (Darurat SDG 15!)")
+    col_kiri, col_kanan = st.columns([1, 2])
+    
+    with col_kiri:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        # Logika Skenario
+        if skenario == "⛅ Normal (Kemarau Biasa)":
+            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 34.0, disabled=True)
+            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 100.0, disabled=True)
+        elif skenario == "🔥 El Nino Ekstrem (Kering & Panas)":
+            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 38.5, disabled=True)
+            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 0.0, disabled=True)
+        elif skenario == "🌧️ La Nina (Basah)":
+            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 31.0, disabled=True)
+            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 250.0, disabled=True)
         else:
-            st.success("🌱 STATUS: Aman Terkendali")
+            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 35.0, 0.5)
+            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 50.0, 10.0)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_kanan:
+        # Menghitung Prediksi (Dot Product Matrix)
+        prediksi_y = np.dot(np.array([1, suhu, hujan]), Beta)
+        hasil_prediksi = max(0, prediksi_y)
+        
+        # UI Metrik Interaktif
+        m1, m2, m3 = st.columns(3)
+        m1.metric(label="Suhu Terpantau", value=f"{suhu}°C")
+        m2.metric(label="Hujan Terpantau", value=f"{hujan} mm")
+        m3.metric(label="Prediksi Lahan Terbakar", value=f"{hasil_prediksi:,.0f} Ha", delta=f"{hasil_prediksi - df_edit['Luas Terbakar (Ha)'].iloc[-1]:,.0f} dari bulan lalu", delta_color="inverse")
+        
+        # Progress Bar Bahaya (Maksimal 5000 Hektar untuk visualisasi)
+        persentase_bahaya = min(hasil_prediksi / 5000.0, 1.0)
+        st.write("**Tingkat Kerusakan Ekosistem (SDG 15):**")
+        progress_bar = st.progress(0)
+        
+        # Animasi Progress Bar
+        for percent_complete in range(int(persentase_bahaya * 100)):
+            time.sleep(0.01)
+            progress_bar.progress(percent_complete + 1)
+        
+        # Indikator Status
+        if hasil_prediksi > 2500:
+            st.error("🚨 **STATUS: BENCANA NASIONAL (EL NINO)** - Evakuasi satwa liar dan kerahkan water-bombing!")
+        elif hasil_prediksi > 800:
+            st.warning("⚠️ **STATUS: SIAGA** - Tingkatkan patroli polisi hutan di titik rawan.")
+        else:
+            st.success("🌱 **STATUS: AMAN** - Ekosistem darat terkendali.")
+
+    # --- 5. BUKTI MATEMATIKA UNTUK DOSEN ---
+    with st.expander("Klik di sini untuk melihat Bukti Komputasi Aljabar Linier (Untuk Dosen)"):
+        st.write("Sistem menemukan bobot fitur secara dinamis menggunakan rumus: $\\beta = (X^T X)^{-1} X^T Y$")
+        c1, c2 = st.columns(2)
+        c1.write("**1. Matriks Invers $(X^T X)^{-1}$**")
+        c1.dataframe(pd.DataFrame(X_T_X_inv).style.format("{:.5f}"))
+        c2.write("**2. Vektor Bobot Regresi (Beta)**")
+        df_beta = pd.DataFrame(Beta, index=["Konstanta", "Bobot Suhu", "Bobot Hujan"], columns=["Nilai"])
+        c2.dataframe(df_beta.style.format("{:.2f}"))

@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # --- 1. KONFIGURASI WEB & CSS ---
 st.set_page_config(page_title="Sistem Konservasi SDG 15", layout="wide", initial_sidebar_state="expanded")

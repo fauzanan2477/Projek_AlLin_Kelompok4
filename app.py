@@ -2,79 +2,41 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 1. KONFIGURASI HALAMAN (Mode WIDE agar full menyesuaikan layar)
-st.set_page_config(page_title="Dashboard Gizi & SPL", layout="wide", initial_sidebar_state="collapsed")
+# --- 1. KONFIGURASI HALAMAN (WIDE & WHITE BACKGROUND) ---
+st.set_page_config(page_title="Sistem Pakar Gizi & SPL", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. INJEKSI CSS CUSTOM (Memaksa Latar Belakang Putih & Bersih)
 st.markdown("""
     <style>
-    /* Memaksa background seluruh aplikasi menjadi putih bersih */
-    .stApp {
-        background-color: #FFFFFF !important;
-    }
+    .stApp { background-color: #FFFFFF !important; }
+    .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 95% !important; }
+    h1, h2, h3, h4, p, span, div, label { color: #2C3E50 !important; font-family: 'Inter', sans-serif !important; }
     
-    /* Mengatur padding dan lebar kontainer utama */
-    .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-        max-width: 95% !important; /* Membuatnya responsif memenuhi layar */
-    }
+    .header-box { border-bottom: 4px solid #27AE60; padding-bottom: 15px; margin-bottom: 25px; }
+    .header-box h1 { font-weight: 800; font-size: 2.2rem; color: #27AE60 !important; margin: 0; }
+    .header-box p { font-size: 1rem; color: #7F8C8D !important; margin-top: 5px; }
     
-    /* Tipografi yang bersih dan elegan (Hitam/Abu-abu gelap) */
-    h1, h2, h3, h4, h5, h6, p, span, div {
-        color: #1E1E1E !important;
-        font-family: 'Inter', 'Segoe UI', sans-serif !important;
-    }
+    .stTabs [data-baseweb="tab-list"] { border-bottom: 2px solid #ECF0F1; }
+    .stTabs [data-baseweb="tab"] { background-color: #FFFFFF; font-weight: 700; font-size: 1.1rem; }
+    .stTabs [aria-selected="true"] { border-bottom: 4px solid #27AE60; color: #27AE60 !important; }
     
-    /* Header Custom */
-    .header-box {
-        border-bottom: 3px solid #2E86C1;
-        padding-bottom: 15px;
-        margin-bottom: 25px;
-    }
-    .header-box h1 {
-        font-weight: 800;
-        font-size: 2.2rem;
-        margin: 0;
-        color: #2E86C1 !important;
-    }
-    .header-box p {
-        font-size: 1rem;
-        color: #555555 !important;
-        margin-top: 5px;
-    }
-    
-    /* Kustomisasi Tab agar menyatu dengan background putih */
-    .stTabs [data-baseweb="tab-list"] {
-        border-bottom: 2px solid #E0E0E0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #FFFFFF;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        border-bottom: 3px solid #2E86C1;
-        color: #2E86C1 !important;
-    }
-    
-    /* Kustomisasi Data Editor/Tabel */
-    [data-testid="stDataFrame"] {
-        background-color: #FAFAFA;
-        border: 1px solid #EEEEEE;
-        border-radius: 8px;
-    }
+    /* Box untuk hasil target */
+    .target-box { background-color: #F9FBFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; text-align: center; }
+    .target-box h2 { color: #27AE60 !important; font-size: 2rem; margin:0; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. HEADER
+# --- 2. HEADER ---
 st.markdown("""
 <div class="header-box">
-    <h1>🥗 Sistem Komputasi Gizi Seimbang (Aljabar Linier)</h1>
-    <p>Mendukung SDGs 3: Kesehatan yang Baik dan Kesejahteraan | Ref: Makalah ITB (2024) & Jurnal Univ. Aisyah (2022)</p>
+    <h1>🥗 Sistem Pakar Perhitungan Gizi & Aljabar Linier</h1>
+    <p>SDGs 3: Kehidupan Sehat dan Sejahtera | Basis: Buku Gizi (Dr. Betty Yosephin) & SPL Matriks (ITB)</p>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. DATABASE SEMENTARA (Matriks 5x5 sesuai Jurnal Utama)
+# --- 3. SESSION STATE (Penyimpanan Data Sementara) ---
+if 'target_nutrisi' not in st.session_state:
+    st.session_state['target_nutrisi'] = {"energi": 2000, "protein": 75, "lemak": 65, "karbo": 275, "serat": 25}
+
 if 'db_gizi' not in st.session_state:
     st.session_state['db_gizi'] = pd.DataFrame({
         "Bahan Makanan": ["Nasi Putih", "Ayam Broiler", "Telur Ayam", "Susu", "Kangkung"],
@@ -85,80 +47,138 @@ if 'db_gizi' not in st.session_state:
         "Serat": [0.004, 0.0, 0.0, 0.0, 0.021]
     })
 
-# 5. TAB NAVBAR
-tab1, tab2 = st.tabs(["🧮 Kalkulator Matriks SPL (Interaktif)", "📚 Resume & Metodologi"])
+# --- 4. TABS NAVBAR ---
+tab1, tab2, tab3 = st.tabs(["👤 1. Kalkulator Kebutuhan Personal", "🧮 2. Matriks SPL Porsi Makanan", "📚 3. Dasar Teori"])
 
-# --- ISI TAB 1: KALKULATOR ---
+# ==========================================
+# TAB 1: KALKULATOR PERSONAL (Berdasarkan Buku)
+# ==========================================
 with tab1:
-    # Membagi layout responsif menggunakan column (Kiri untuk Tabel, Kanan untuk Target)
-    col_tabel, col_target = st.columns([6, 2])
+    st.write("### Masukkan Data Fisik Anda")
+    st.caption("Sistem akan menghitung Total Kebutuhan Energi (Target Vektor B) menggunakan formula medis standar.")
     
-    with col_tabel:
-        st.write("### 📝 Tabel Matriks Kandungan Gizi (A)")
-        st.caption("Data interaktif: Anda bebas mengubah angka, menambah baris makanan baru, atau menghapus baris.")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1: jk = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+    with col2: umur = st.number_input("Umur (Tahun)", min_value=10, max_value=100, value=20)
+    with col3: bb = st.number_input("Berat Badan (kg)", min_value=30.0, value=65.0)
+    with col4: tb = st.number_input("Tinggi Badan (cm)", min_value=120.0, value=170.0)
+    
+    col_act, col_goal = st.columns(2)
+    with col_act:
+        aktivitas = st.selectbox("Tingkat Aktivitas Fisik", [
+            "Jarang olahraga (Sedentary)", 
+            "Olahraga ringan (1-3 hari/minggu)", 
+            "Olahraga sedang (3-5 hari/minggu)", 
+            "Olahraga berat (6-7 hari/minggu)"
+        ])
+    with col_goal:
+        tujuan = st.selectbox("Tujuan Berat Badan", [
+            "Mempertahankan Berat Badan (Maintain)",
+            "Menurunkan Berat Badan (Defisit Kalori)",
+            "Menaikkan Berat Badan (Surplus Kalori)"
+        ])
+    
+    if st.button("Hitung Target Gizi Pribadi", type="primary"):
+        # 1. Hitung BMR (Mifflin-St Jeor Equation - Standar Medis)
+        if jk == "Laki-laki":
+            bmr = (10 * bb) + (6.25 * tb) - (5 * umur) + 5
+        else:
+            bmr = (10 * bb) + (6.25 * tb) - (5 * umur) - 161
+            
+        # 2. Kalikan dengan Faktor Aktivitas
+        if "Jarang" in aktivitas: tdee = bmr * 1.2
+        elif "ringan" in aktivitas: tdee = bmr * 1.375
+        elif "sedang" in aktivitas: tdee = bmr * 1.55
+        else: tdee = bmr * 1.725
         
-        tabel_diedit = st.data_editor(
-            st.session_state['db_gizi'],
-            num_rows="dynamic",
-            use_container_width=True,
-            hide_index=True
-        )
-        st.session_state['db_gizi'] = tabel_diedit
+        # 3. Penyesuaian Tujuan Berat Badan
+        if "Menurunkan" in tujuan: tdee -= 500
+        elif "Menaikkan" in tujuan: tdee += 500
         
-    with col_target:
-        st.write("### 🎯 Target AKE Harian (B)")
-        st.caption("Skenario: Anak 7-9 Tahun (Skala 1:100)")
-        t_energi = st.number_input("Energi", value=16.50, step=1.0)
-        t_protein = st.number_input("Protein", value=0.40, step=0.1)
-        t_lemak = st.number_input("Lemak", value=0.55, step=0.1)
-        t_karbo = st.number_input("Karbo", value=2.50, step=0.1)
-        t_serat = st.number_input("Serat", value=0.23, step=0.1)
+        # 4. Hitung Makronutrien (Karbo 50%, Protein 20%, Lemak 30%)
+        karbo = (tdee * 0.50) / 4
+        protein = (tdee * 0.20) / 4
+        lemak = (tdee * 0.30) / 9
+        serat = 25 # Kebutuhan serat rata-rata harian
+        
+        # Simpan ke Session State untuk digunakan di Matriks SPL
+        st.session_state['target_nutrisi'] = {
+            "energi": round(tdee, 1), "protein": round(protein, 1), 
+            "lemak": round(lemak, 1), "karbo": round(karbo, 1), "serat": serat
+        }
+        
+        st.success("Target Vektor $B$ berhasil dihitung dan disimpan! Silakan lanjut ke Tab 2.")
 
-    st.write("---")
+    # Menampilkan Target Saat Ini
+    st.markdown('<div class="target-box">', unsafe_allow_html=True)
+    st.write("#### 🎯 Target Nutrisi Harian Anda (Vektor $B$)")
+    t_col1, t_col2, t_col3, t_col4, t_col5 = st.columns(5)
+    t = st.session_state['target_nutrisi']
+    t_col1.metric("⚡ Energi", f"{t['energi']} kkal")
+    t_col2.metric("🥩 Protein", f"{t['protein']} g")
+    t_col3.metric("🥑 Lemak", f"{t['lemak']} g")
+    t_col4.metric("🍚 Karbohidrat", f"{t['karbo']} g")
+    t_col5.metric("🥬 Serat", f"{t['serat']} g")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================
+# TAB 2: MATRIKS SPL (Berdasarkan Jurnal)
+# ==========================================
+with tab2:
+    st.write("### 📝 Tabel Matriks Kandungan Gizi Makanan (Matriks $A$)")
+    st.caption("Data interaktif: Anda bebas mengubah angka, menambah baris makanan baru, atau menghapus baris.")
     
-    # EKSEKUSI PERHITUNGAN
-    if st.button("🚀 Kalkulasi Eliminasi Gauss-Jordan", type="primary", use_container_width=True):
-        st.write("### 📊 Hasil Komputasi Vektor Porsi (X)")
+    tabel_diedit = st.data_editor(st.session_state['db_gizi'], num_rows="dynamic", use_container_width=True, hide_index=True)
+    st.session_state['db_gizi'] = tabel_diedit
+    
+    st.write("---")
+    if st.button("🚀 Kalkulasi Porsi Makanan (Eliminasi Gauss-Jordan)", type="primary", use_container_width=True):
+        st.write("### 📊 Hasil Komputasi Vektor Porsi ($X$)")
         
+        # Mengambil Matriks A dari Tabel (Ditranspose)
         A_raw = tabel_diedit[["Energi", "Protein", "Lemak", "Karbohidrat", "Serat"]].values.T
-        B = np.array([t_energi, t_protein, t_lemak, t_karbo, t_serat])
+        
+        # Mengambil Target Vektor B dari Tab 1
+        # Skala dibagi 100 menyesuaikan koefisien matriks pada jurnal
+        t = st.session_state['target_nutrisi']
+        B = np.array([t['energi']/100, t['protein']/100, t['lemak']/100, t['karbo']/100, t['serat']/100])
+        
         nama_makanan = tabel_diedit["Bahan Makanan"].tolist()
         jumlah_variabel = len(nama_makanan)
         
         if jumlah_variabel == 5:
             try:
+                # Penyelesaian SPL Murni
                 X = np.linalg.solve(A_raw, B)
                 
-                # Menampilkan hasil berdampingan secara responsif
                 kolom_hasil = st.columns(5)
                 for i in range(5):
-                    kolom_hasil[i].metric(label=f"{nama_makanan[i]}", value=f"{X[i]:.3f} Porsi")
+                    kolom_hasil[i].metric(label=f"{nama_makanan[i]}", value=f"{X[i]:.2f} Porsi")
                     
-                # Validasi Kelemahan Jurnal
                 st.write("")
                 if any(porsi < 0 for porsi in X):
-                    st.error("""
-                    **⚠️ PERINGATAN VALIDASI (Sesuai Kesimpulan Makalah ITB):** Sistem mendeteksi adanya porsi makanan bernilai **NEGATIF**. Hal ini menunjukkan kelemahan fatal SPL murni jika diterapkan di dunia nyata, di mana porsi makanan fisik tidak mungkin berada di bawah nol. SPL membutuhkan penambahan *constraint logic* (Program Linier).
-                    """)
+                    st.error("⚠️ **EVALUASI JURNAL:** Sistem mendeteksi adanya porsi bernilai **NEGATIF**. Ini membuktikan kelemahan fatal SPL murni di dunia nyata (tidak ada batas $\ge 0$). Logika aljabar benar, namun tidak valid secara biologis manusia.")
                 else:
-                    st.success("✅ Matriks diselesaikan dan porsi bernilai logis.")
+                    st.success("✅ Matriks diselesaikan dan kombinasi porsi bernilai positif (logis).")
             except np.linalg.LinAlgError:
-                st.error("🚨 Matriks Singular! Sistem persamaan ini tidak memiliki solusi pasti.")
+                st.error("🚨 Matriks Singular! Sistem tidak menemukan solusi persilangan garis (Determinannya Nol).")
         else:
-            st.warning(f"Sistem beralih ke metode **Kuadrat Terkecil (Least Squares)** karena matriks tidak berbentuk persegi ($5 \\times {jumlah_variabel}$).")
+            st.warning(f"Sistem menggunakan pendekatan **Least Squares** karena matriks tidak berbentuk persegi ($5 \\times {jumlah_variabel}$).")
             try:
                 X, _, _, _ = np.linalg.lstsq(A_raw, B, rcond=None)
                 kolom_hasil = st.columns(jumlah_variabel)
                 for i in range(jumlah_variabel):
-                    kolom_hasil[i].metric(label=f"{nama_makanan[i]}", value=f"{X[i]:.3f} Porsi")
+                    kolom_hasil[i].metric(label=f"{nama_makanan[i]}", value=f"{X[i]:.2f} Porsi")
             except Exception as e:
                 st.error(f"Error perhitungan matriks dinamis: {e}")
 
-# --- ISI TAB 2: METODOLOGI ---
-with tab2:
+# ==========================================
+# TAB 3: DASAR TEORI
+# ==========================================
+with tab3:
     st.write("### Landasan Matematika dan Teori Gizi")
     st.write("""
-    - **Teori Gizi:** Berdasarkan Jurnal *ABDI KE UNGU* (2022), IMT yang sehat memerlukan asupan kalori dan nutrisi makro yang sangat presisi sesuai pilar Gizi Seimbang.
-    - **Model SPL:** Berdasarkan Makalah ITB (2024), penghitungan gizi direpresentasikan sebagai $AX = B$.
-    - **Pembuktian Evaluasi:** Aplikasi ini membuktikan secara *real-time* bahwa perkalian invers matriks pada $AX = B$ kerap kali memberikan *output* angka negatif pada vektor $X$ yang melanggar hukum realitas alam.
+    1. **Tahap 1 (Buku Tuntunan Gizi):** Sistem meminta data biofisik pengguna untuk mencari target kalori menggunakan rumus BMR. Target ini kemudian didistribusikan ke makronutrisi dan dijadikan **Vektor Hasil ($B$)**.
+    2. **Tahap 2 (Makalah ITB):** Sistem mengubah makanan menjadi matriks sistem persamaan linear $AX = B$. Vektor porsi $X$ dicari menggunakan kalkulasi matriks balikan (invers). 
+    3. **Tujuan Utama:** Proyek ini menyimulasikan algoritma di balik aplikasi kesehatan dan membuktikan kelemahan SPL jika tidak diberi *constraint* dunia nyata.
     """)

@@ -1,138 +1,115 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import plotly.express as px
 
-# 1. KONFIGURASI HALAMAN
-st.set_page_config(page_title="Sistem Perencanaan Energi", layout="wide")
+# 1. KONFIGURASI HALAMAN DASHBOARD
+st.set_page_config(page_title="Sistem Analisis Nutrisi PCA", layout="wide")
 
-# 2. INJEKSI CSS UNTUK TAMPILAN HTML KLASIK
 st.markdown("""
     <style>
-    /* Mengatur kontainer agar mirip halaman web biasa */
-    .block-container { 
-        padding-top: 1.5rem; 
-        max-width: 1000px; /* Lebar dibatasi agar rapi seperti container HTML */
-    }
-    
-    /* Format Judul */
-    .app-header {
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-        font-family: Arial, sans-serif;
-    }
-    .app-header h1 {
-        font-size: 26px;
-        color: #222;
-        margin: 0;
-    }
-    .app-header p {
-        font-size: 14px;
-        color: #666;
-        margin-top: 5px;
-    }
-    
-    /* Mengubah desain Tab menjadi Navbar Sederhana */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 15px;
-        border-bottom: 1px solid #ccc;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: transparent;
-        padding: 8px 16px;
-        font-family: Arial, sans-serif;
-        font-weight: 600;
-        color: #444;
-    }
-    .stTabs [aria-selected="true"] {
-        border-bottom: 3px solid #0056b3;
-        color: #0056b3;
-    }
+    .block-container { padding-top: 1.5rem; max-width: 1100px; }
+    .header-box { border-bottom: 4px solid #8e44ad; padding-bottom: 15px; margin-bottom: 25px; }
+    .header-box h1 { font-size: 2.2rem; color: #8e44ad; margin: 0; font-weight: 800; }
+    .header-box p { font-size: 1.1rem; color: #555; margin-top: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. HEADER WEBSITE
+# 2. HEADER
 st.markdown("""
-<div class="app-header">
-    <h1>Sistem Perencanaan Pembangkit Energi (Matriks SPL)</h1>
-    <p>Aplikasi implementasi Aljabar Linier untuk tata kota berkelanjutan (SDG 7).</p>
+<div class="header-box">
+    <h1>🛒 Pemetaan Data Nutrisi Makanan Kemasan (PCA)</h1>
+    <p>Reduksi Dimensi Aljabar Linier (Nilai & Vektor Eigen) | Ref: Jurnal ALGORITMA (2026)</p>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. INISIALISASI DATA MATRIKS
-if 'db_energi' not in st.session_state:
-    st.session_state['db_energi'] = pd.DataFrame({
-        "Jenis Pembangkit (Variabel)": ["PLTS (Surya - x1)", "PLTB (Angin - x2)", "PLTA (Air - x3)"],
-        "Koefisien Energi (MW)": [1.0, 1.0, 1.0],
-        "Biaya Pembangunan (Miliar)": [10.0, 15.0, 20.0],
-        "Reduksi Emisi (Ton)": [5.0, 8.0, 12.0]
+# 3. DATABASE DUMMY MAKANAN KEMASAN (MATRIKS MULTIDIMENSI)
+if 'db_nutrisi' not in st.session_state:
+    st.session_state['db_nutrisi'] = pd.DataFrame({
+        "Nama Produk": ["Mie Goreng Instan", "Minuman Soda Cola", "Snack Keripik Kentang", "Susu Cokelat UHT", "Yogurt Plain", "Teh Manis Kemasan", "Kacang Panggang"],
+        "Kategori": ["Makanan Berat", "Minuman", "Cemilan", "Minuman", "Susu/Dairy", "Minuman", "Cemilan"],
+        "Kalori (kkal)": [380, 140, 480, 150, 80, 120, 520],
+        "Lemak (g)": [14.0, 0.0, 28.0, 4.5, 1.5, 0.0, 42.0],
+        "Karbohidrat (g)": [54.0, 39.0, 50.0, 22.0, 12.0, 31.0, 18.0],
+        "Gula (g)": [8.0, 39.0, 2.0, 18.0, 4.0, 31.0, 3.0],
+        "Natrium/Garam (mg)": [1070, 45, 650, 90, 60, 20, 200]
     })
 
-# 5. NAVBAR MENU (Pindah Halaman)
-halaman1, halaman2, halaman3 = st.tabs(["Beranda Target", "Kalkulator Matriks", "Dokumentasi"])
+# 4. TABS NAVIGASI
+tab1, tab2, tab3 = st.tabs(["📊 Visualisasi PCA (Pemetaan Produk)", "🗄️ Database Matriks (Data Mentah)", "📚 Teori Vektor Eigen"])
 
-# --- HALAMAN 1: BERANDA / TARGET ---
-with halaman1:
-    st.write("### Penentuan Konstanta (Vektor B)")
-    st.write("Silakan tentukan target yang harus dicapai oleh sistem komputasi:")
+# ==========================================
+# TAB 1: VISUALISASI PCA (OUTPUT VISUAL UTAMA)
+# ==========================================
+with tab1:
+    st.write("### 🧮 Analisis Reduksi Dimensi")
+    st.write("Data nutrisi memiliki 5 variabel (Kalori, Lemak, Karbo, Gula, Natrium). Manusia tidak bisa menggambar grafik 5 Dimensi. Tekan tombol di bawah untuk menggunakan **Vektor Eigen (PCA)** demi memampatkan data tersebut menjadi 2 Dimensi (Sumbu X dan Y).")
     
-    col_t1, col_t2, col_t3 = st.columns(3)
-    with col_t1: target_energi = st.number_input("Target Total Energi (MW)", value=100.0)
-    with col_t2: target_biaya = st.number_input("Batas Anggaran (Miliar Rupiah)", value=1400.0)
-    with col_t3: target_karbon = st.number_input("Target Pengurangan Karbon (Ton)", value=760.0)
-    
-    st.info("Nilai di atas akan digunakan sebagai Vektor Konstanta (B) dalam operasi Aljabar Linier.")
+    if st.button("🚀 Eksekusi Aljabar Linier (Jalankan PCA)", type="primary"):
+        df = st.session_state['db_nutrisi']
+        
+        # 1. Memisahkan Label dan Matriks Numerik
+        fitur_nutrisi = df[["Kalori (kkal)", "Lemak (g)", "Karbohidrat (g)", "Gula (g)", "Natrium/Garam (mg)"]]
+        
+        # 2. Standardisasi Matriks (Agar skala Garam(mg) dan Lemak(g) setara di mata Aljabar)
+        scaler = StandardScaler()
+        matriks_skala = scaler.fit_transform(fitur_nutrisi)
+        
+        # 3. PROSES INTI: Ekstraksi Vektor Eigen (PCA)
+        pca = PCA(n_components=2)
+        matriks_pca = pca.fit_transform(matriks_skala)
+        varians_tersimpan = pca.explained_variance_ratio_.sum() * 100
+        
+        # 4. Memasukkan hasil ke DataFrame untuk divisualisasikan
+        df_hasil = pd.DataFrame(matriks_pca, columns=["Komponen Utama 1 (Vektor X)", "Komponen Utama 2 (Vektor Y)"])
+        df_hasil["Nama Produk"] = df["Nama Produk"]
+        df_hasil["Kategori"] = df["Kategori"]
+        
+        st.write("---")
+        st.success(f"✅ Matriks berhasil direduksi! Meskipun dimensi dikompresi dari 5D ke 2D, kita masih mempertahankan **{varians_tersimpan:.2f}%** karakteristik asli data makanan.")
+        
+        # 5. OUTPUT VISUAL: Scatter Plot Interaktif menggunakan Plotly
+        st.write("### 🗺️ Peta Kedekatan Karakteristik Makanan")
+        st.caption("Titik yang saling berdekatan menunjukkan bahwa makanan tersebut memiliki profil gizi yang serupa secara aljabar.")
+        
+        fig = px.scatter(
+            df_hasil, 
+            x="Komponen Utama 1 (Vektor X)", 
+            y="Komponen Utama 2 (Vektor Y)", 
+            color="Kategori", 
+            text="Nama Produk",
+            size_max=15
+        )
+        fig.update_traces(textposition='top center', marker=dict(size=12))
+        fig.update_layout(height=600)
+        st.plotly_chart(fig, use_container_width=True)
 
-# --- HALAMAN 2: KALKULATOR MATRIKS ---
-with halaman2:
-    st.write("### Tabel Parameter Pembangkit (Matriks A)")
-    st.write("Sistem mendeteksi 3 jenis infrastruktur. Nilai koefisien dapat diedit langsung pada tabel di bawah ini.")
+# ==========================================
+# TAB 2: DATABASE DATA MENTAH
+# ==========================================
+with tab2:
+    st.write("### 📋 Matriks Data Nutrisi Multidimensi")
+    st.info("Ini adalah wujud matriks asli sebelum direduksi. Anda dapat menambahkan produk baru di baris terbawah untuk melihat posisinya di grafik PCA.")
     
-    # Tabel interaktif dengan key agar stabil
-    tabel_matriks = st.data_editor(
-        st.session_state['db_energi'], 
-        use_container_width=True,
-        hide_index=True,
-        key="tabel_parameter"
+    tabel_diedit = st.data_editor(
+        st.session_state['db_nutrisi'], 
+        num_rows="dynamic", 
+        use_container_width=True
     )
-    st.session_state['db_energi'] = tabel_matriks
-    
-    st.write("---")
-    
-    if st.button("Proses Operasi Eliminasi Gauss-Jordan", type="primary"):
-        # Menyusun array Matriks
-        A_raw = tabel_matriks[["Koefisien Energi (MW)", "Biaya Pembangunan (Miliar)", "Reduksi Emisi (Ton)"]].values.T
-        B = np.array([target_energi, target_biaya, target_karbon])
-        nama_pembangkit = tabel_matriks["Jenis Pembangkit (Variabel)"].tolist()
-        
-        jumlah_variabel = len(nama_pembangkit)
-        
-        # Validasi Komputasi
-        st.write("#### Output Resolusi Sistem (Vektor X)")
-        if jumlah_variabel == 3:
-            try:
-                X = np.linalg.solve(A_raw, B)
-                
-                res_c1, res_c2, res_c3 = st.columns(3)
-                res_c1.metric(label=f"{nama_pembangkit[0]}", value=f"{X[0]:.1f} MW")
-                res_c2.metric(label=f"{nama_pembangkit[1]}", value=f"{X[1]:.1f} MW")
-                res_c3.metric(label=f"{nama_pembangkit[2]}", value=f"{X[2]:.1f} MW")
-                
-                st.success("Komputasi Selesai. Hasil matriks tunggal (solusi eksak) berhasil ditemukan.")
-            except np.linalg.LinAlgError:
-                st.error("Sistem Gagal: Matriks bersifat singular. Tidak ada titik potong yang valid untuk parameter tersebut.")
-        else:
-            st.error("Kesalahan Dimensi: Operasi eliminasi murni membutuhkan bentuk matriks persegi (3x3). Silakan kembalikan baris tabel menjadi 3 jenis pembangkit.")
+    st.session_state['db_nutrisi'] = tabel_diedit
 
-# --- HALAMAN 3: DOKUMENTASI ---
-with halaman3:
-    st.write("### Dokumentasi Logika Sistem")
+# ==========================================
+# TAB 3: DOKUMENTASI MATEMATIKA
+# ==========================================
+with tab3:
+    st.write("### 📑 Mengapa PCA Membutuhkan Nilai Eigen & Vektor Eigen?")
     st.write("""
-    **Arsitektur Komputasi:**
-    - Perangkat lunak ini mengubah data input tabel (Frontend) menjadi struktur Array dua dimensi (Backend) menggunakan pustaka `NumPy`.
-    - Persamaan yang terbentuk:
-      1. Persamaan Kapasitas: $x_1 + x_2 + x_3 = Target\_Energi$
-      2. Persamaan Finansial: $c_1x_1 + c_2x_2 + c_3x_3 = Batas\_Anggaran$
-      3. Persamaan Lingkungan: $e_1x_1 + e_2x_2 + e_3x_3 = Target\_Karbon$
-    - Sistem akan mengeksekusi fungsi `numpy.linalg.solve` untuk mengembalikan matriks Invers yang memecahkan Vektor $X$ (kapasitas pembangkit).
+    Sesuai dengan jurnal **ALGORITMA (2026)**, Principal Component Analysis (PCA) tidak mungkin bisa bekerja tanpa ilmu Aljabar Linier tingkat lanjut.
+    
+    1. **Matriks Kovarian:** Komputer pertama-tama mengubah data nutrisi menjadi Matriks Kovarian (mengukur bagaimana Lemak bergerak bersama Kalori, dsb).
+    2. **Pencarian Arah Utama (Vektor Eigen):** Sistem mencari **Vektor Eigen** dari matriks kovarian tersebut. Vektor Eigen bertindak sebagai "Sumbu/Garis Kemiringan" yang menangkap pergerakan data paling ekstrem.
+    3. **Pembobotan (Nilai Eigen):** **Nilai Eigen** menunjukkan seberapa besar informasi (varians) yang dikandung oleh masing-masing Vektor Eigen.
+    4. **Proyeksi SVD:** Data nutrisi awal kemudian dikalikan (dot product) dengan Vektor Eigen terkuat untuk membentuk titik-titik baru (Komponen Utama) yang bisa Anda lihat pada grafik di Tab 1.
     """)

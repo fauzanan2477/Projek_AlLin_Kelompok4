@@ -2,126 +2,159 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-# --- 1. KONFIGURASI HALAMAN (Wajib di baris paling atas) ---
-st.set_page_config(page_title="CarbonWatch | SDG 13", layout="wide", page_icon="🌍")
+# --- 1. KONFIGURASI TAMPILAN WEB ---
+st.set_page_config(page_title="Platform Mitigasi Karhutla", layout="wide")
 
-# --- 2. MENU NAVIGASI ATAS (TOP MENU) ---
-st.markdown('<h2 style="color:#22d3ee; text-align:center;">🌍 CARBONWATCH: Analisis Emisi CO₂ (SDG 13)</h2>', unsafe_allow_html=True)
-st.write("---")
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .block-container { padding-top: 2rem; padding-bottom: 2rem; }
+    h1, h2, h3 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 600; }
+    div[data-testid="metric-container"] {
+        background-color: rgba(144, 153, 163, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #d9534f;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Membuat menu pilihan berbentuk horizontal di atas
-menu_pilihan = st.radio(
-    "PILIH HALAMAN:",
-    ["🏠 1. Dashboard Utama (Data & Tren)", "🎛️ 2. Kompresi Matriks (SVD)", "▦ 3. Analisis Nilai Eigen (PCA)"],
-    horizontal=True
-)
-st.write("---")
-
-# --- 3. DATABASE (BISA DI-EDIT) ---
-# Kita taruh data di luar agar bisa diakses oleh semua halaman
-kota = ["Jakarta", "Surabaya", "Bandung", "Medan", "Makassar"]
-bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"]
-
-# Jika belum ada data tersimpan, buat data default
-if 'data_emisi' not in st.session_state:
-    st.session_state.data_emisi = pd.DataFrame(
-        [
-            [8.2, 7.9, 8.5, 9.1, 9.4, 8.8],
-            [5.1, 4.8, 5.3, 5.7, 6.0, 5.5],
-            [3.4, 3.2, 3.6, 3.9, 4.1, 3.7],
-            [4.6, 4.3, 4.8, 5.2, 5.5, 5.0],
-            [2.8, 2.6, 2.9, 3.2, 3.4, 3.0],
-        ], 
-        index=kota, columns=bulan
-    )
-
-# Mengambil data dari memory (Session State)
-df = st.session_state.data_emisi
-
-# --- 4. LOGIKA PERPINDAHAN HALAMAN ---
-
-# ==========================================
-# HALAMAN 1: DASHBOARD UTAMA
-# ==========================================
-if menu_pilihan == "🏠 1. Dashboard Utama (Data & Tren)":
-    st.subheader("📝 Tabel Data Emisi Karbon (Mt CO₂)")
-    st.info("💡 **Interaktif:** Silakan klik dua kali pada angka di tabel untuk mengubah nilainya. Grafik dan perhitungan Aljabar Linier di halaman lain akan otomatis menyesuaikan!")
-    
-    # Tabel interaktif yang bisa diedit user
-    df_diedit = st.data_editor(df, use_container_width=True)
-    
-    # Simpan perubahan ke memory
-    st.session_state.data_emisi = df_diedit
-    
-    st.subheader("📈 Grafik Tren Emisi Bulanan")
-    st.write("Arahkan mouse ke garis grafik untuk melihat detail angka secara interaktif.")
-    # Streamlit line_chart butuh data di mana kolom adalah garis (kota) dan baris adalah sumbu X (bulan)
-    # Jadi kita perlu men-transpose matriksnya (T)
-    st.line_chart(df_diedit.T)
-
-
-# ==========================================
-# HALAMAN 2: KOMPRESI MATRIKS (SVD)
-# ==========================================
-elif menu_pilihan == "🎛️ 2. Kompresi Matriks (SVD)":
-    st.subheader("🎛️ Dekomposisi Nilai Singular (Singular Value Decomposition)")
-    st.write("Metode SVD ($A = U \cdot \Sigma \cdot V^T$) digunakan untuk membuang *noise* pada data cuaca/emisi.")
-    
-    A = df.values # Mengambil matriks angka
-    
-    # Slider interaktif
-    k = st.slider("Tentukan jumlah rank (k) untuk merekonstruksi matriks:", min_value=1, max_value=5, value=2)
-    
-    # Perhitungan SVD
-    U, S, Vt = np.linalg.svd(A, full_matrices=False)
-    
-    # Rekonstruksi matriks baru (Ak) berdasarkan rank k
-    Ak = np.dot(U[:, :k], np.dot(np.diag(S[:k]), Vt[:k, :]))
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.success("**Matriks Asli (A)**")
-        st.dataframe(df)
-        st.write("**Nilai Singular ($\Sigma$) yang ditemukan:**")
-        st.write(S.round(3))
-        
-    with col2:
-        st.warning(f"**Matriks Rekonstruksi Rank-{k} ($\hat{{A}}$)**")
-        # Mengubah hasil numpy kembali ke wujud tabel Pandas
-        df_Ak = pd.DataFrame(Ak, index=kota, columns=bulan)
-        st.dataframe(df_Ak.style.format("{:.2f}"))
-        
-        # Menghitung Error / Kehilangan Data
-        error = np.linalg.norm(A - Ak, 'fro')
-        st.info(f"Tingkat Kehilangan Data (Error Frobenius): **{error:.3f}**")
-
-
-# ==========================================
-# HALAMAN 3: NILAI EIGEN (PCA)
-# ==========================================
-elif menu_pilihan == "▦ 3. Analisis Nilai Eigen (PCA)":
-    st.subheader("▦ Analisis Nilai Eigen & Vektor Eigen")
-    st.write("Dalam pemodelan iklim (*Principal Component Analysis*), matriks data akan dikalikan dengan transposenya untuk mencari **Matriks Kovarians**, lalu dihitung Nilai Eigennya untuk menemukan komponen utama (penyumbang emisi terbesar).")
-    
-    A = df.values
-    # Perkalian Matriks (A dikali A Transpose)
-    C = np.dot(A, A.T)
-    
-    # Mencari Nilai Eigen
-    nilai_eigen, vektor_eigen = np.linalg.eigh(C)
-    
-    # Mengurutkan dari yang paling besar ke kecil
-    nilai_eigen = nilai_eigen[::-1]
-    
-    # Tampilan hasil
-    st.write("**Nilai Eigen yang Diperoleh ($\lambda$):**")
-    df_eigen = pd.DataFrame({
-        "Komponen": [f"λ {i+1}" for i in range(len(nilai_eigen))],
-        "Besaran Variansi": nilai_eigen
+# --- 2. MANAJEMEN BASIS DATA (SIKLUS 1 TAHUN) ---
+if 'basis_data' not in st.session_state:
+    st.session_state.basis_data = pd.DataFrame({
+        "Bulan": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
+        "Suhu Udara (°C)": [31.0, 31.5, 32.0, 32.5, 33.5, 34.5, 35.5, 36.5, 36.0, 34.0, 32.5, 31.5],
+        "Curah Hujan (mm)": [250, 220, 180, 150, 100, 60, 30, 10, 20, 80, 160, 230],
+        "Luas Terbakar (Hektar)": [20, 35, 80, 150, 400, 900, 2100, 4500, 3800, 1200, 300, 50]
     })
-    st.dataframe(df_eigen.style.format({"Besaran Variansi": "{:.2f}"}), use_container_width=True)
+
+tabel_historis = st.session_state.basis_data
+
+# --- 3. MESIN KOMPUTASI ALJABAR LINIER ---
+def hitung_regresi_matriks(tabel_data):
+    try:
+        # 1. Menyiapkan Vektor Target (Y) dan Matriks Fitur (X)
+        vektor_luas_terbakar = tabel_data["Luas Terbakar (Hektar)"].values
+        
+        # Menambahkan angka 1 di kolom pertama matriks sebagai intersep/konstanta persamaan
+        matriks_variabel_bebas = np.column_stack((
+            np.ones(len(tabel_data)), 
+            tabel_data["Suhu Udara (°C)"], 
+            tabel_data["Curah Hujan (mm)"]
+        ))
+        
+        # 2. Operasi Pemecahan Sistem Persamaan Linier (Normal Equation)
+        matriks_transpose = matriks_variabel_bebas.T
+        perkalian_matriks = np.dot(matriks_transpose, matriks_variabel_bebas)
+        matriks_invers = np.linalg.inv(perkalian_matriks)
+        
+        perkalian_vektor = np.dot(matriks_transpose, vektor_luas_terbakar)
+        
+        # Hasil Akhir: Vektor Koefisien
+        vektor_koefisien_regresi = np.dot(matriks_invers, perkalian_vektor)
+        
+        return vektor_koefisien_regresi, matriks_invers, True
+    except Exception:
+        return None, None, False
+
+# Mengeksekusi fungsi matematika
+koefisien_model, matriks_invers_model, status_kalkulasi = hitung_regresi_matriks(tabel_historis)
+
+# --- 4. NAVIGASI SIDEBAR ---
+with st.sidebar:
+    st.title("Mitigasi SDG 15")
+    st.write("Analisis Risiko Karhutla Tahunan")
+    st.markdown("---")
+    menu = st.radio(
+        "Menu Navigasi",
+        ["Ringkasan Eksekutif", "Manajemen Dataset (1 Tahun)", "Simulasi Prediktif", "Spesifikasi Pemodelan Matriks"],
+        label_visibility="collapsed"
+    )
+    st.markdown("---")
+    st.caption("Implementasi Aljabar Linier & SPL")
+
+# --- 5. ANTARMUKA HALAMAN ---
+
+if menu == "Ringkasan Eksekutif":
+    st.title("Ringkasan Eksekutif Tahunan")
+    st.write("Pemantauan siklus iklim selama 12 bulan terakhir dan dampaknya terhadap ekosistem hutan.")
     
-    st.subheader("📊 Grafik Distribusi Nilai Eigen")
-    # Bar chart interaktif bawaan Streamlit
-    st.bar_chart(df_eigen.set_index("Komponen"))
-    st.info("💡 **Analisis Ekologi (SDG 13):** Nilai Eigen pertama ($\lambda 1$) yang sangat tinggi menunjukkan bahwa pola tren emisi secara keseluruhan sangat didominasi oleh satu faktor utama (kemungkinan besar aktivitas industri di Jakarta & Surabaya).")
+    col1, col2, col3 = st.columns(3)
+    suhu_puncak = tabel_historis["Suhu Udara (°C)"].max()
+    total_lahan_rusak = tabel_historis["Luas Terbakar (Hektar)"].sum()
+    bulan_terparah = tabel_historis.loc[tabel_historis["Luas Terbakar (Hektar)"].idxmax(), "Bulan"]
+    
+    col1.metric("Suhu Puncak Tahunan", f"{suhu_puncak:.1f} °C")
+    col2.metric("Total Lahan Terdampak", f"{total_lahan_rusak:,.0f} Ha")
+    col3.metric("Bulan Paling Kritis", f"{bulan_terparah}", delta="Kemarau Ekstrem", delta_color="inverse")
+    
+    st.markdown("### Kurva Luas Lahan Terbakar (Siklus 1 Tahun)")
+    st.area_chart(tabel_historis.set_index("Bulan")["Luas Terbakar (Hektar)"], color="#d9534f")
+
+
+elif menu == "Manajemen Dataset (1 Tahun)":
+    st.title("Manajemen Dataset Pemantauan")
+    st.write("Tabel di bawah ini memuat data pemantauan selama 12 bulan penuh. Perubahan pada angka di tabel akan langsung diproses ulang oleh sistem Aljabar Linier pada latar belakang (*backend*).")
+    
+    # Tinggi diatur agar muat 12 bulan tanpa memakan terlalu banyak ruang
+    tabel_yang_diedit = st.data_editor(tabel_historis, height=450, use_container_width=True)
+    st.session_state.basis_data = tabel_yang_diedit
+
+
+elif menu == "Simulasi Prediktif":
+    st.title("Simulasi Prediktif Kondisi Iklim")
+    st.write("Masukkan estimasi suhu dan curah hujan untuk memprediksi potensi perluasan area terbakar.")
+    
+    if not status_kalkulasi:
+        st.error("Kalkulasi dihentikan. Matriks Singular terdeteksi pada dataset historis.")
+    else:
+        c1, c2 = st.columns([1, 2])
+        
+        with c1:
+            st.markdown("**Parameter Lingkungan:**")
+            estimasi_suhu = st.number_input("Suhu Udara Harian (°C)", min_value=25.0, max_value=45.0, value=37.5, step=0.5)
+            estimasi_hujan = st.number_input("Curah Hujan Bulanan (mm)", min_value=0.0, max_value=400.0, value=15.0, step=5.0)
+            
+        with c2:
+            st.markdown("**Hasil Proyeksi Luas Lahan:**")
+            
+            # Perkalian Vektor (Input) dengan Vektor (Koefisien)
+            vektor_kondisi_baru = np.array([1, estimasi_suhu, estimasi_hujan])
+            perhitungan_prediksi = np.dot(vektor_kondisi_baru, koefisien_model)
+            luas_lahan_final = max(0, perhitungan_prediksi)
+            
+            st.metric(label="Estimasi Kerusakan Ekosistem", value=f"{luas_lahan_final:,.0f} Hektar")
+            
+            st.write("Indeks Status Ekologi (SDG 15):")
+            if luas_lahan_final > 3000:
+                st.progress(1.0)
+                st.error("Status: Kritis (Dibutuhkan Intervensi Pemadaman Udara Nasional)")
+            elif luas_lahan_final > 1000:
+                st.progress(0.5)
+                st.warning("Status: Siaga (Peningkatan Patroli Hutan)")
+            else:
+                st.progress(0.1)
+                st.success("Status: Terkendali (Kondisi Hutan Aman)")
+
+
+elif menu == "Spesifikasi Pemodelan Matriks":
+    st.title("Spesifikasi Operasi Aljabar Linier")
+    st.write("Dokumentasi teknis pemecahan Sistem Persamaan Linier (SPL) yang bertugas sebagai *engine* prediksi pada aplikasi ini.")
+    
+    if not status_kalkulasi:
+        st.warning("Data matriks gagal diproses (Determinan = 0).")
+    else:
+        st.markdown("#### 1. Persamaan Regresi yang Dihasilkan")
+        st.latex(r"Y = \beta_0 + \beta_1 (\text{Suhu}) + \beta_2 (\text{Hujan})")
+        
+        st.markdown("#### 2. Matriks Invers $(X^T X)^{-1}$")
+        st.write("Matriks invers ini adalah penentu utama keberhasilan sistem menyelesaikan persamaan kompleks dari data 12 bulan.")
+        tabel_invers = pd.DataFrame(matriks_invers_model)
+        st.dataframe(tabel_invers.style.format("{:.7f}"))
+        
+        st.markdown("#### 3. Vektor Koefisien ($\beta$)")
+        tabel_koefisien = pd.DataFrame(
+            koefisien_model, 
+            index=["Intersep (Konstanta)", "Koefisien Suhu Udara", "Koefisien Curah Hujan"], 
+            columns=["Nilai Bobot"]
+        )
+        st.dataframe(tabel_koefisien.style.format("{:.4f}"))

@@ -1,160 +1,147 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# --- 1. KONFIGURASI TAMPILAN WEB ---
-st.set_page_config(page_title="Platform Mitigasi Karhutla", layout="wide")
+# --- 1. KONFIGURASI WEB & CSS ---
+st.set_page_config(page_title="Sistem Konservasi SDG 15", layout="wide", initial_sidebar_state="expanded")
 
+# CSS untuk menyembunyikan elemen bawaan Streamlit agar terlihat seperti website mandiri
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
     header {visibility: hidden;}
-    .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-    h1, h2, h3 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 600; }
-    div[data-testid="metric-container"] {
-        background-color: rgba(144, 153, 163, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #d9534f;
-    }
+    footer {visibility: hidden;}
+    .block-container {padding-top: 2rem; padding-bottom: 2rem;}
+    h1, h2, h3 {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #2E4053;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. MANAJEMEN BASIS DATA (SIKLUS 1 TAHUN) ---
-if 'basis_data' not in st.session_state:
-    st.session_state.basis_data = pd.DataFrame({
-        "Bulan": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
-        "Suhu Udara (°C)": [31.0, 31.5, 32.0, 32.5, 33.5, 34.5, 35.5, 36.5, 36.0, 34.0, 32.5, 31.5],
-        "Curah Hujan (mm)": [250, 220, 180, 150, 100, 60, 30, 10, 20, 80, 160, 230],
-        "Luas Terbakar (Hektar)": [20, 35, 80, 150, 400, 900, 2100, 4500, 3800, 1200, 300, 50]
-    })
+# --- 2. STATE MANAGEMENT (PENYIMPANAN DATA SEMENTARA) ---
+if 'populasi_awal' not in st.session_state:
+    st.session_state.populasi_awal = [150, 100, 250] # Bayi, Remaja, Dewasa
 
-tabel_historis = st.session_state.basis_data
+if 'parameter_matriks' not in st.session_state:
+    # [Fekunditas Dewasa, Survival Bayi->Remaja, Survival Remaja->Dewasa, Survival Dewasa]
+    st.session_state.parameter_matriks = [0.15, 0.60, 0.85, 0.90] 
 
-# --- 3. MESIN KOMPUTASI ALJABAR LINIER ---
-def hitung_regresi_matriks(tabel_data):
-    try:
-        # 1. Menyiapkan Vektor Target (Y) dan Matriks Fitur (X)
-        vektor_luas_terbakar = tabel_data["Luas Terbakar (Hektar)"].values
-        
-        # Menambahkan angka 1 di kolom pertama matriks sebagai intersep/konstanta persamaan
-        matriks_variabel_bebas = np.column_stack((
-            np.ones(len(tabel_data)), 
-            tabel_data["Suhu Udara (°C)"], 
-            tabel_data["Curah Hujan (mm)"]
-        ))
-        
-        # 2. Operasi Pemecahan Sistem Persamaan Linier (Normal Equation)
-        matriks_transpose = matriks_variabel_bebas.T
-        perkalian_matriks = np.dot(matriks_transpose, matriks_variabel_bebas)
-        matriks_invers = np.linalg.inv(perkalian_matriks)
-        
-        perkalian_vektor = np.dot(matriks_transpose, vektor_luas_terbakar)
-        
-        # Hasil Akhir: Vektor Koefisien
-        vektor_koefisien_regresi = np.dot(matriks_invers, perkalian_vektor)
-        
-        return vektor_koefisien_regresi, matriks_invers, True
-    except Exception:
-        return None, None, False
-
-# Mengeksekusi fungsi matematika
-koefisien_model, matriks_invers_model, status_kalkulasi = hitung_regresi_matriks(tabel_historis)
-
-# --- 4. NAVIGASI SIDEBAR ---
+# --- 3. MENU NAVIGASI (SIDEBAR) ---
 with st.sidebar:
-    st.title("Mitigasi SDG 15")
-    st.write("Analisis Risiko Karhutla Tahunan")
+    st.title("Sistem Ekologi (SDG 15)")
+    st.write("Pemodelan Populasi Spesies Rentan")
     st.markdown("---")
-    menu = st.radio(
-        "Menu Navigasi",
-        ["Ringkasan Eksekutif", "Manajemen Dataset (1 Tahun)", "Simulasi Prediktif", "Spesifikasi Pemodelan Matriks"],
-        label_visibility="collapsed"
+    menu_pilihan = st.radio(
+        "Navigasi Halaman:",
+        ["Beranda", "Manajemen Parameter", "Simulasi Proyeksi", "Spesifikasi Aljabar Linier"]
     )
     st.markdown("---")
-    st.caption("Implementasi Aljabar Linier & SPL")
+    st.caption("Berbasis Matriks Leslie & Nilai Eigen")
 
-# --- 5. ANTARMUKA HALAMAN ---
+# --- 4. KONTEN HALAMAN ---
 
-if menu == "Ringkasan Eksekutif":
-    st.title("Ringkasan Eksekutif Tahunan")
-    st.write("Pemantauan siklus iklim selama 12 bulan terakhir dan dampaknya terhadap ekosistem hutan.")
+if menu_pilihan == "Beranda":
+    st.title("Ringkasan Konservasi Orangutan Kalimantan")
+    st.write("Selamat datang di Sistem Proyeksi Ekologi. Sistem ini menggunakan **Matriks Leslie** untuk memprediksi pertumbuhan populasi Orangutan Kalimantan (*Pongo pygmaeus*) dalam beberapa dekade mendatang guna mendukung tujuan pembangunan berkelanjutan (SDG 15).")
     
     col1, col2, col3 = st.columns(3)
-    suhu_puncak = tabel_historis["Suhu Udara (°C)"].max()
-    total_lahan_rusak = tabel_historis["Luas Terbakar (Hektar)"].sum()
-    bulan_terparah = tabel_historis.loc[tabel_historis["Luas Terbakar (Hektar)"].idxmax(), "Bulan"]
+    col1.metric("Total Populasi Saat Ini", sum(st.session_state.populasi_awal), "Individu")
+    col2.metric("Tingkat Kelahiran (Fekunditas)", f"{st.session_state.parameter_matriks[0]}", "Per Individu Dewasa")
+    col3.metric("Status Konservasi", "Kritis (Critically Endangered)", delta_color="inverse")
     
-    col1.metric("Suhu Puncak Tahunan", f"{suhu_puncak:.1f} °C")
-    col2.metric("Total Lahan Terdampak", f"{total_lahan_rusak:,.0f} Ha")
-    col3.metric("Bulan Paling Kritis", f"{bulan_terparah}", delta="Kemarau Ekstrem", delta_color="inverse")
-    
-    st.markdown("### Kurva Luas Lahan Terbakar (Siklus 1 Tahun)")
-    st.area_chart(tabel_historis.set_index("Bulan")["Luas Terbakar (Hektar)"], color="#d9534f")
+    st.image("https://images.unsplash.com/photo-1549472614-6101c5cb5aeb?q=80&w=1200&auto=format&fit=crop", caption="Orangutan Kalimantan (Ilustrasi)", use_column_width=True)
 
 
-elif menu == "Manajemen Dataset (1 Tahun)":
-    st.title("Manajemen Dataset Pemantauan")
-    st.write("Tabel di bawah ini memuat data pemantauan selama 12 bulan penuh. Perubahan pada angka di tabel akan langsung diproses ulang oleh sistem Aljabar Linier pada latar belakang (*backend*).")
+elif menu_pilihan == "Manajemen Parameter":
+    st.title("Manajemen Parameter Populasi")
+    st.write("Sesuaikan vektor populasi awal dan matriks probabilitas kelangsungan hidup (Berdasarkan data observasi lapangan).")
     
-    # Tinggi diatur agar muat 12 bulan tanpa memakan terlalu banyak ruang
-    tabel_yang_diedit = st.data_editor(tabel_historis, height=450, use_container_width=True)
-    st.session_state.basis_data = tabel_yang_diedit
+    col_kiri, col_kanan = st.columns(2)
+    
+    with col_kiri:
+        st.subheader("1. Vektor Populasi Awal")
+        bayi = st.number_input("Jumlah Bayi (0-5 Tahun)", min_value=0, value=st.session_state.populasi_awal[0])
+        remaja = st.number_input("Jumlah Remaja (6-15 Tahun)", min_value=0, value=st.session_state.populasi_awal[1])
+        dewasa = st.number_input("Jumlah Dewasa (>15 Tahun)", min_value=0, value=st.session_state.populasi_awal[2])
+        st.session_state.populasi_awal = [bayi, remaja, dewasa]
+        
+    with col_kanan:
+        st.subheader("2. Matriks Kelangsungan Hidup")
+        f_dewasa = st.slider("Laju Reproduksi Dewasa", 0.0, 1.0, st.session_state.parameter_matriks[0], 0.01)
+        s_bayi = st.slider("Peluang Hidup (Bayi → Remaja)", 0.0, 1.0, st.session_state.parameter_matriks[1], 0.01)
+        s_remaja = st.slider("Peluang Hidup (Remaja → Dewasa)", 0.0, 1.0, st.session_state.parameter_matriks[2], 0.01)
+        s_dewasa = st.slider("Peluang Bertahan Hidup Dewasa", 0.0, 1.0, st.session_state.parameter_matriks[3], 0.01)
+        st.session_state.parameter_matriks = [f_dewasa, s_bayi, s_remaja, s_dewasa]
+        
+    st.success("Data berhasil disimpan ke dalam memori sesi (Session State). Silakan buka menu 'Simulasi Proyeksi'.")
 
 
-elif menu == "Simulasi Prediktif":
-    st.title("Simulasi Prediktif Kondisi Iklim")
-    st.write("Masukkan estimasi suhu dan curah hujan untuk memprediksi potensi perluasan area terbakar.")
+elif menu_pilihan == "Simulasi Proyeksi":
+    st.title("Simulasi Proyeksi Masa Depan")
     
-    if not status_kalkulasi:
-        st.error("Kalkulasi dihentikan. Matriks Singular terdeteksi pada dataset historis.")
+    rentang_tahun = st.slider("Rentang Proyeksi (Tahun ke depan)", 1, 50, 20)
+    
+    # Membangun Matriks Leslie (Ordo 3x3)
+    f_dewasa, s_bayi, s_remaja, s_dewasa = st.session_state.parameter_matriks
+    matriks_leslie = np.array([
+        [0, 0, f_dewasa],
+        [s_bayi, 0, 0],
+        [0, s_remaja, s_dewasa]
+    ])
+    
+    # Vektor Populasi (Ordo 3x1)
+    vektor_populasi = np.array(st.session_state.populasi_awal)
+    
+    # Proses Iterasi Perkalian Matriks (N_t+1 = L * N_t)
+    riwayat_populasi = [vektor_populasi]
+    for _ in range(rentang_tahun):
+        vektor_populasi = np.dot(matriks_leslie, vektor_populasi)
+        riwayat_populasi.append(vektor_populasi)
+        
+    # Visualisasi
+    df_proyeksi = pd.DataFrame(riwayat_populasi, columns=["Fase Bayi", "Fase Remaja", "Fase Dewasa"])
+    df_proyeksi.index.name = "Tahun Ke-"
+    
+    st.line_chart(df_proyeksi)
+    
+    total_akhir = np.sum(riwayat_populasi[-1])
+    st.metric("Estimasi Total Populasi di Akhir Proyeksi", f"{int(total_akhir)} Individu")
+
+
+elif menu_pilihan == "Spesifikasi Aljabar Linier":
+    st.title("Spesifikasi Model Aljabar Linier")
+    st.write("Bagian ini memaparkan justifikasi matematis di balik simulasi populasi menggunakan matriks.")
+    
+    f_dewasa, s_bayi, s_remaja, s_dewasa = st.session_state.parameter_matriks
+    matriks_leslie = np.array([
+        [0, 0, f_dewasa],
+        [s_bayi, 0, 0],
+        [0, s_remaja, s_dewasa]
+    ])
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### 1. Matriks Leslie ($L$)")
+        st.write("Menyimpan tingkat reproduksi (baris pertama) dan kelangsungan hidup (diagonal bawah).")
+        st.dataframe(pd.DataFrame(matriks_leslie).style.format("{:.2f}"))
+        
+    with col2:
+        st.markdown("#### 2. Vektor Status Awal ($N_0$)")
+        st.write("Jumlah populasi saat ini yang bertindak sebagai vektor awal.")
+        st.dataframe(pd.DataFrame(st.session_state.populasi_awal, index=["Bayi", "Remaja", "Dewasa"], columns=["Jumlah"]))
+
+    st.markdown("---")
+    st.markdown("#### 3. Analisis Ekologi melalui Nilai Eigen ($\lambda$)")
+    st.write("Untuk mengetahui apakah spesies ini akan punah atau lestari tanpa perlu melihat grafik, sistem menghitung **Nilai Eigen Dominan** dari Matriks $L$.")
+    
+    # Perhitungan Nilai Eigen
+    nilai_eigen, vektor_eigen = np.linalg.eig(matriks_leslie)
+    eigen_dominan = max(np.real(nilai_eigen))
+    
+    st.info(f"Ditemukan Nilai Eigen Maksimum (Laju Pertumbuhan Populasi) = **{eigen_dominan:.4f}**")
+    
+    if eigen_dominan > 1:
+        st.success("**Status:** Spesies Lestari ($\lambda > 1$). Populasi akan terus bertambah.")
+    elif eigen_dominan == 1:
+        st.warning("**Status:** Stabil ($\lambda = 1$). Populasi tidak bertambah dan tidak berkurang.")
     else:
-        c1, c2 = st.columns([1, 2])
-        
-        with c1:
-            st.markdown("**Parameter Lingkungan:**")
-            estimasi_suhu = st.number_input("Suhu Udara Harian (°C)", min_value=25.0, max_value=45.0, value=37.5, step=0.5)
-            estimasi_hujan = st.number_input("Curah Hujan Bulanan (mm)", min_value=0.0, max_value=400.0, value=15.0, step=5.0)
-            
-        with c2:
-            st.markdown("**Hasil Proyeksi Luas Lahan:**")
-            
-            # Perkalian Vektor (Input) dengan Vektor (Koefisien)
-            vektor_kondisi_baru = np.array([1, estimasi_suhu, estimasi_hujan])
-            perhitungan_prediksi = np.dot(vektor_kondisi_baru, koefisien_model)
-            luas_lahan_final = max(0, perhitungan_prediksi)
-            
-            st.metric(label="Estimasi Kerusakan Ekosistem", value=f"{luas_lahan_final:,.0f} Hektar")
-            
-            st.write("Indeks Status Ekologi (SDG 15):")
-            if luas_lahan_final > 3000:
-                st.progress(1.0)
-                st.error("Status: Kritis (Dibutuhkan Intervensi Pemadaman Udara Nasional)")
-            elif luas_lahan_final > 1000:
-                st.progress(0.5)
-                st.warning("Status: Siaga (Peningkatan Patroli Hutan)")
-            else:
-                st.progress(0.1)
-                st.success("Status: Terkendali (Kondisi Hutan Aman)")
-
-
-elif menu == "Spesifikasi Pemodelan Matriks":
-    st.title("Spesifikasi Operasi Aljabar Linier")
-    st.write("Dokumentasi teknis pemecahan Sistem Persamaan Linier (SPL) yang bertugas sebagai *engine* prediksi pada aplikasi ini.")
-    
-    if not status_kalkulasi:
-        st.warning("Data matriks gagal diproses (Determinan = 0).")
-    else:
-        st.markdown("#### 1. Persamaan Regresi yang Dihasilkan")
-        st.latex(r"Y = \beta_0 + \beta_1 (\text{Suhu}) + \beta_2 (\text{Hujan})")
-        
-        st.markdown("#### 2. Matriks Invers $(X^T X)^{-1}$")
-        st.write("Matriks invers ini adalah penentu utama keberhasilan sistem menyelesaikan persamaan kompleks dari data 12 bulan.")
-        tabel_invers = pd.DataFrame(matriks_invers_model)
-        st.dataframe(tabel_invers.style.format("{:.7f}"))
-        
-        st.markdown("#### 3. Vektor Koefisien ($\beta$)")
-        tabel_koefisien = pd.DataFrame(
-            koefisien_model, 
-            index=["Intersep (Konstanta)", "Koefisien Suhu Udara", "Koefisien Curah Hujan"], 
-            columns=["Nilai Bobot"]
-        )
-        st.dataframe(tabel_koefisien.style.format("{:.4f}"))
+        st.error("**Status:** Terancam Punah ($\lambda < 1$). Intervensi konservasi sangat diperlukan.")

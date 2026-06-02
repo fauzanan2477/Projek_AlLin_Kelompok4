@@ -1,114 +1,73 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import time
+import matplotlib.pyplot as plt
 
-# --- 1. KONFIGURASI & TEMA DASHBOARD ---
-st.set_page_config(page_title="Prediksi Karhutla", layout="wide", page_icon="🌲")
+# 1. KONFIGURASI WEB
+st.set_page_config(page_title="SDG 13 - Emisi CO2", layout="wide")
+st.title("🌍 Monitoring Emisi CO₂ & Analisis Matriks")
+st.write("Silakan **edit angka pada tabel di bawah ini**. Grafik, SVD, dan Nilai Eigen akan dihitung ulang secara otomatis!")
 
-st.markdown("""
-    <style>
-    .main-title { font-size: 3rem; font-weight: 900; color: #d35400; text-align: center; margin-bottom: 0; }
-    .sub-title { font-size: 1.2rem; color: #e67e22; text-align: center; margin-bottom: 30px; }
-    .metric-card { background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #d35400; }
-    </style>
-""", unsafe_allow_html=True)
+# 2. DATA DEFAULT (Bisa diubah oleh pengguna di Web)
+cities = ["Jakarta", "Surabaya", "Bandung", "Medan", "Makassar"]
+months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"]
+default_data = np.array([
+    [8.2, 7.9, 8.5, 9.1, 9.4, 8.8],
+    [5.1, 4.8, 5.3, 5.7, 6.0, 5.5],
+    [3.4, 3.2, 3.6, 3.9, 4.1, 3.7],
+    [4.6, 4.3, 4.8, 5.2, 5.5, 5.0],
+    [2.8, 2.6, 2.9, 3.2, 3.4, 3.0],
+])
 
-st.markdown('<p class="main-title">🌲 Sistem Prediksi Karhutla</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Simulasi Mitigasi Bencana (SDG 15) Berbasis Aljabar Linier & SPL</p>', unsafe_allow_html=True)
+df = pd.DataFrame(default_data, index=cities, columns=months)
 
-# --- 2. DATA HISTORIS (BISA DI-EDIT AUDIENS) ---
-st.write("### 📅 1. Perekaman Data Historis (Interaktif)")
-st.info("Ketik langsung pada tabel untuk mengubah data historis. Algoritma matriks akan beradaptasi secara otomatis!")
+# FITUR UTAMA: Tabel yang bisa diedit layaknya Excel
+st.subheader("📝 Tabel Data Emisi (Bisa Diedit)")
+edited_df = st.data_editor(df, use_container_width=True)
 
-data_awal = pd.DataFrame({
-    "Bulan": ["Januari", "Februari", "Maret", "April", "Mei", "Juni"],
-    "Suhu Udara (°C)": [31.0, 31.5, 32.5, 33.5, 34.5, 35.5],
-    "Curah Hujan (mm)": [250, 200, 150, 80, 40, 10],
-    "Luas Terbakar (Ha)": [20, 50, 150, 500, 1200, 3500]
-})
+# Ambil matriks angka yang sudah diedit
+A = edited_df.values
 
-df_edit = st.data_editor(data_awal, num_rows="dynamic", use_container_width=True)
+# 3. DASHBOARD VISUALISASI (Dibagi menjadi 3 Tab)
+tab1, tab2, tab3 = st.tabs(["📈 Tren Emisi", "🎛️ Dekomposisi SVD", "▦ Nilai Eigen (PCA)"])
 
-# --- 3. KOMPUTASI ALJABAR LINIER (CORE ENGINE) ---
-try:
-    Y = df_edit["Luas Terbakar (Ha)"].values
-    X = np.column_stack((np.ones(len(df_edit)), df_edit["Suhu Udara (°C)"], df_edit["Curah Hujan (mm)"]))
+with tab1:
+    st.subheader("Tren Emisi CO₂ (Berdasarkan Tabel Saat Ini)")
+    fig, ax = plt.subplots(figsize=(10, 4))
+    for i, city in enumerate(cities):
+        ax.plot(months, A[i], marker='o', lw=2, label=city)
+    ax.set_ylabel("Mt CO₂")
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+    ax.grid(alpha=0.3)
+    st.pyplot(fig)
 
-    # SPL & Invers Matriks: Beta = (X^T * X)^-1 * X^T * Y
-    X_T = X.T
-    X_T_X_inv = np.linalg.inv(np.dot(X_T, X))
-    Beta = np.dot(X_T_X_inv, np.dot(X_T, Y))
-    sukses = True
-except np.linalg.LinAlgError:
-    st.error("🚨 Matriks Singular! Determinan bernilai 0. Pastikan data suhu/hujan bervariasi.")
-    sukses = False
-
-if sukses:
-    # --- 4. PANEL SIMULASI INTERAKTIF ---
-    st.divider()
-    st.write("### 🎮 2. Simulasi Prediksi Masa Depan")
-    st.write("Pilih skenario cuaca untuk bulan depan, atau atur sendiri angkanya secara kustom untuk melihat respon sistem!")
+with tab2:
+    st.subheader("Singular Value Decomposition (A = U Σ Vᵀ)")
+    k = st.slider("Pilih Rank-k untuk Kompresi Matriks (Rekonstruksi):", min_value=1, max_value=5, value=2)
     
-    # Fitur Interaktif: Pilihan Skenario
-    skenario = st.radio("Pilih Skenario Cuaca BMKG:", 
-                        ["⛅ Normal (Kemarau Biasa)", "🔥 El Nino Ekstrem (Kering & Panas)", "🌧️ La Nina (Basah)", "🎛️ Kustom (Geser Sendiri)"], 
-                        horizontal=True)
+    # Rumus Aljabar Linear: SVD
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
+    Ak = U[:, :k] @ np.diag(S[:k]) @ Vt[:k, :]
     
-    col_kiri, col_kanan = st.columns([1, 2])
-    
-    with col_kiri:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        # Logika Skenario
-        if skenario == "⛅ Normal (Kemarau Biasa)":
-            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 34.0, disabled=True)
-            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 100.0, disabled=True)
-        elif skenario == "🔥 El Nino Ekstrem (Kering & Panas)":
-            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 38.5, disabled=True)
-            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 0.0, disabled=True)
-        elif skenario == "🌧️ La Nina (Basah)":
-            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 31.0, disabled=True)
-            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 250.0, disabled=True)
-        else:
-            suhu = st.slider("Suhu (°C)", 30.0, 42.0, 35.0, 0.5)
-            hujan = st.slider("Hujan (mm)", 0.0, 300.0, 50.0, 10.0)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_kanan:
-        # Menghitung Prediksi (Dot Product Matrix)
-        prediksi_y = np.dot(np.array([1, suhu, hujan]), Beta)
-        hasil_prediksi = max(0, prediksi_y)
-        
-        # UI Metrik Interaktif
-        m1, m2, m3 = st.columns(3)
-        m1.metric(label="Suhu Terpantau", value=f"{suhu}°C")
-        m2.metric(label="Hujan Terpantau", value=f"{hujan} mm")
-        m3.metric(label="Prediksi Lahan Terbakar", value=f"{hasil_prediksi:,.0f} Ha", delta=f"{hasil_prediksi - df_edit['Luas Terbakar (Ha)'].iloc[-1]:,.0f} dari bulan lalu", delta_color="inverse")
-        
-        # Progress Bar Bahaya (Maksimal 5000 Hektar untuk visualisasi)
-        persentase_bahaya = min(hasil_prediksi / 5000.0, 1.0)
-        st.write("**Tingkat Kerusakan Ekosistem (SDG 15):**")
-        progress_bar = st.progress(0)
-        
-        # Animasi Progress Bar
-        for percent_complete in range(int(persentase_bahaya * 100)):
-            time.sleep(0.01)
-            progress_bar.progress(percent_complete + 1)
-        
-        # Indikator Status
-        if hasil_prediksi > 2500:
-            st.error("🚨 **STATUS: BENCANA NASIONAL (EL NINO)** - Evakuasi satwa liar dan kerahkan water-bombing!")
-        elif hasil_prediksi > 800:
-            st.warning("⚠️ **STATUS: SIAGA** - Tingkatkan patroli polisi hutan di titik rawan.")
-        else:
-            st.success("🌱 **STATUS: AMAN** - Ekosistem darat terkendali.")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("1. Matriks Asli (A):")
+        st.dataframe(pd.DataFrame(A, index=cities, columns=months))
+        st.write("Nilai Singular (Σ):", S.round(2))
+    with col2:
+        st.write(f"2. Rekonstruksi Matriks Rank-{k} (Â):")
+        st.dataframe(pd.DataFrame(Ak.round(2), index=cities, columns=months))
 
-    # --- 5. BUKTI MATEMATIKA UNTUK DOSEN ---
-    with st.expander("Klik di sini untuk melihat Bukti Komputasi Aljabar Linier (Untuk Dosen)"):
-        st.write("Sistem menemukan bobot fitur secara dinamis menggunakan rumus: $\\beta = (X^T X)^{-1} X^T Y$")
-        c1, c2 = st.columns(2)
-        c1.write("**1. Matriks Invers $(X^T X)^{-1}$**")
-        c1.dataframe(pd.DataFrame(X_T_X_inv).style.format("{:.5f}"))
-        c2.write("**2. Vektor Bobot Regresi (Beta)**")
-        df_beta = pd.DataFrame(Beta, index=["Konstanta", "Bobot Suhu", "Bobot Hujan"], columns=["Nilai"])
-        c2.dataframe(df_beta.style.format("{:.2f}"))
+with tab3:
+    st.subheader("Nilai Eigen dari Matriks Kovarians (C = A·Aᵀ)")
+    st.write("Basis utama untuk algoritma *Principal Component Analysis (PCA)* di dalam jurnal iklim.")
+    
+    # Rumus Aljabar Linear: Nilai Eigen
+    A_At = A @ A.T
+    eigenvalues, _ = np.linalg.eigh(A_At)
+    eigenvalues = eigenvalues[::-1] # Urutkan dari yang terbesar
+    
+    fig2, ax2 = plt.subplots(figsize=(6, 3))
+    ax2.bar([f"λ{i+1}" for i in range(len(eigenvalues))], eigenvalues, color='teal')
+    ax2.set_ylabel("Besaran Variansi (Eigen)")
+    st.pyplot(fig2)

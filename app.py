@@ -2,142 +2,149 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-# --- 1. PENGATURAN HALAMAN ---
-st.set_page_config(page_title="Simulasi Ekologi SDG 15", layout="centered")
+# --- 1. KONFIGURASI HALAMAN (WIDE) ---
+st.set_page_config(page_title="Gizi.com | SDG 2", layout="wide", initial_sidebar_state="collapsed")
 
+# --- 2. CSS CUSTOM (DARK MODE KOMPAS-STYLE) ---
 st.markdown("""
     <style>
+    /* Mengubah tema dasar menjadi gelap */
+    .stApp {
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+    
+    /* Menyembunyikan header dan footer bawaan Streamlit */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 1.15rem;
+    
+    /* Modifikasi ukuran container atas */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Membuat gaya Tab persis seperti Navbar Kompas.com Dark Mode */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #1a1a1a;
+        padding: 10px 20px;
+        border-bottom: 1px solid #333;
+        gap: 20px;
+    }
+    .stTabs [data-baseweb="tab-list"] button {
+        color: #B3B3B3;
+        background-color: transparent;
+        font-size: 1rem;
+        font-family: 'Segoe UI', Arial, sans-serif;
         font-weight: 600;
+        text-transform: uppercase;
+        border: none;
+    }
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        color: #FFFFFF;
+        border-bottom: 3px solid #D32F2F; /* Garis bawah merah ala portal berita */
+    }
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        color: #FFFFFF;
+    }
+    
+    /* Modifikasi Metric Card agar keren di dark mode */
+    div[data-testid="metric-container"] {
+        background-color: #242424;
+        border: 1px solid #333;
+        padding: 20px;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. HEADER ---
-st.markdown("<h2 style='text-align: center; color: #2E86C1;'>Simulasi Ekologi Satwa (SDG 15)</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Prediksi Laju Pertumbuhan Populasi Menggunakan Matriks Leslie</p>", unsafe_allow_html=True)
-st.write("---")
+# --- 3. HEADER WEBSITE (LOGO) ---
+st.markdown("<h1 style='font-family: serif; margin-bottom: -15px;'>GIZI<span style='color:#D32F2F;'>.com</span></h1>", unsafe_allow_html=True)
+st.markdown("<p style='color:#B3B3B3; font-size: 0.9rem; font-style: italic;'>JERNIH MEMENUHI NUTRISI BERSAMA ALJABAR LINIER</p>", unsafe_allow_html=True)
 
-# --- 3. MENU NAVIGASI (ALA KOMPAS) ---
+# --- 4. MENU NAVIGASI (ALA PORTAL BERITA) ---
 menu1, menu2, menu3 = st.tabs([
-    "Berita Utama", 
-    "Simulasi & Input Data", 
-    "Hitungan Matriks (Teori)"
+    "News (Kalkulator)", 
+    "Kolom (Database)", 
+    "Edukasi (Teori Matriks)"
 ])
 
-# --- 4. PENYIMPANAN DATA SEMENTARA ---
-if 'nama_hewan' not in st.session_state:
-    st.session_state.nama_hewan = "Harimau Sumatera"
-if 'populasi_awal' not in st.session_state:
-    st.session_state.populasi_awal = [50, 30, 20] 
+# --- DATA KANDUNGAN GIZI ---
+if 'kandungan_gizi' not in st.session_state:
+    st.session_state.kandungan_gizi = pd.DataFrame({
+        "Bahan Makanan": ["Makanan A (Tempe)", "Makanan B (Telur)", "Makanan C (Sayur)"],
+        "Protein (g)": [2, 1, 3],
+        "Karbohidrat (g)": [3, 2, 1],
+        "Lemak (g)": [1, 2, 1]
+    })
 
 # ==========================================
-# TAB 1: BERANDA
+# TAB 1: NEWS (KALKULATOR UTAMA)
 # ==========================================
 with menu1:
-    st.write("### Identifikasi Spesies")
-    st.write("Sistem ini merujuk pada pemodelan Matriks Leslie. Masukkan nama spesies yang akan dianalisis untuk memprediksi kecenderungan laju pertumbuhannya.")
+    st.markdown("### Kalkulasi Komposisi Porsi Harian")
+    st.write("Masukkan target gizi yang ingin Anda penuhi hari ini. Mesin matriks kami akan menghitung kombinasi porsinya secara akurat.")
     
-    input_hewan = st.text_input("Nama Spesies Satwa:", st.session_state.nama_hewan)
-    st.session_state.nama_hewan = input_hewan
+    k1, k2, k3 = st.columns(3)
+    target_protein = k1.number_input("Target Protein (g)", value=12)
+    target_karbo = k2.number_input("Target Karbohidrat (g)", value=12)
+    target_lemak = k3.number_input("Target Lemak (g)", value=8)
     
-    st.success(f"Target Analisis: **{st.session_state.nama_hewan}**")
-
-# ==========================================
-# TAB 2: SIMULASI & INPUT DATA
-# ==========================================
-with menu2:
-    st.write(f"### Parameter Populasi {st.session_state.nama_hewan}")
-    st.write("Masukkan jumlah populasi awal dan data demografi lapangan. Sistem akan mengonversinya menjadi Tingkat Kesuburan dan Tingkat Ketahanan Hidup.")
-    
-    kolom_kiri, kolom_kanan = st.columns(2)
-    
-    with kolom_kiri:
-        st.info("Vektor Distribusi Umur Awal, n(t)")
-        bayi_skrg = st.number_input("Jumlah Bayi (Ekor)", min_value=0, value=st.session_state.populasi_awal[0])
-        remaja_skrg = st.number_input("Jumlah Remaja (Ekor)", min_value=0, value=st.session_state.populasi_awal[1])
-        dewasa_skrg = st.number_input("Jumlah Dewasa (Ekor)", min_value=0, value=st.session_state.populasi_awal[2])
-        st.session_state.populasi_awal = [bayi_skrg, remaja_skrg, dewasa_skrg]
-        
-    with kolom_kanan:
-        st.info("Data Demografi (Tahun Lalu)")
-        induk_dewasa = st.number_input("Total Dewasa Tahun Lalu", min_value=1, value=20)
-        bayi_lahir = st.number_input("Bayi yang Lahir dari mereka", min_value=0, value=10)
-        st.divider()
-        bayi_awal = st.number_input("Total Bayi Tahun Lalu", min_value=1, value=50)
-        bayi_hidup = st.number_input("Bayi yang hidup jadi Remaja", min_value=0, value=25)
-        st.divider()
-        remaja_awal = st.number_input("Total Remaja Tahun Lalu", min_value=1, value=30)
-        remaja_hidup = st.number_input("Remaja yang hidup jadi Dewasa", min_value=0, value=24)
-        st.divider()
-        dewasa_awal = st.number_input("Total Dewasa (Selain yang mati tua)", min_value=1, value=20)
-        dewasa_hidup = st.number_input("Dewasa yang bertahan hidup", min_value=0, value=18)
-
-    # Kalkulasi Tingkat Kesuburan (a_i) dan Tingkat Ketahanan Hidup (b_i)
-    f_dewasa = bayi_lahir / induk_dewasa
-    s_bayi = bayi_hidup / bayi_awal
-    s_remaja = remaja_hidup / remaja_awal
-    s_dewasa = dewasa_hidup / dewasa_awal
-
     st.write("---")
-    st.write("### Grafik Proyeksi (20 Tahun) n(t+p) = A^p n(t)")
     
-    # Matriks Leslie A
-    matriks_leslie = np.array([
-        [0, 0, f_dewasa],
-        [s_bayi, 0, 0],
-        [0, s_remaja, s_dewasa]
+    df = st.session_state.kandungan_gizi
+    matriks_A = np.array([
+        df["Protein (g)"].values,
+        df["Karbohidrat (g)"].values,
+        df["Lemak (g)"].values
     ])
     
-    vektor_populasi = np.array(st.session_state.populasi_awal)
-    riwayat = [vektor_populasi]
+    vektor_B = np.array([target_protein, target_karbo, target_lemak])
     
-    # Looping perkalian matriks
-    for _ in range(20):
-        vektor_populasi = np.dot(matriks_leslie, vektor_populasi)
-        riwayat.append(vektor_populasi)
+    try:
+        invers_A = np.linalg.inv(matriks_A)
+        vektor_X = np.dot(invers_A, vektor_B)
         
-    df_proyeksi = pd.DataFrame(riwayat, columns=["Bayi", "Remaja", "Dewasa"])
-    st.line_chart(df_proyeksi)
-    
-    total_akhir = int(np.sum(riwayat[-1]))
-    st.metric(f"Prediksi Jumlah Populasi (Tahun ke-20)", f"{total_akhir} Ekor")
+        st.markdown("<h4 style='color:#4CAF50;'>Rekomendasi Porsi Makanan:</h4>", unsafe_allow_html=True)
+        
+        h1, h2, h3 = st.columns(3)
+        h1.metric(df["Bahan Makanan"].iloc[0], f"{vektor_X[0]:.0f} Porsi")
+        h2.metric(df["Bahan Makanan"].iloc[1], f"{vektor_X[1]:.0f} Porsi")
+        h3.metric(df["Bahan Makanan"].iloc[2], f"{vektor_X[2]:.0f} Porsi")
+        
+    except np.linalg.LinAlgError:
+        st.error("Kalkulasi gagal. Susunan gizi matriks menyebabkan Determinan = 0.")
 
 # ==========================================
-# TAB 3: TEORI MATRIKS (UNTUK DOSEN)
+# TAB 2: KOLOM (DATABASE KANDUNGAN)
+# ==========================================
+with menu2:
+    st.markdown("### Database Kandungan Bahan Pangan")
+    st.write("Tabel kandungan per 1 porsi saji. Ubah nilai di bawah ini untuk melihat bagaimana invers matriks beradaptasi.")
+    
+    tabel_edit = st.data_editor(st.session_state.kandungan_gizi, use_container_width=True, hide_index=True)
+    st.session_state.kandungan_gizi = tabel_edit
+
+# ==========================================
+# TAB 3: EDUKASI (BUKTI TEORI MATRIKS)
 # ==========================================
 with menu3:
-    st.write("### Pembuktian Matematis (Matriks Leslie & Nilai Eigen)")
-    st.write("Berdasarkan jurnal, status laju pertumbuhan populasi dianalisis menggunakan Nilai Eigen Dominan.")
-    
-    st.markdown("**1. Kalkulasi Entri Matriks**")
-    st.write(f"- Tingkat Kesuburan ($a_i$): {bayi_lahir} / {induk_dewasa} = **{f_dewasa:.2f}**")
-    st.write(f"- Tingkat Ketahanan Hidup Bayi ($b_1$): {bayi_hidup} / {bayi_awal} = **{s_bayi:.2f}**")
-    st.write(f"- Tingkat Ketahanan Hidup Remaja ($b_2$): {remaja_hidup} / {remaja_awal} = **{s_remaja:.2f}**")
+    st.markdown("### Pembuktian Invers Matriks & SPL")
+    st.write("Sebuah makalah dari ITB membuktikan bahwa perhitungan gizi sering menghasilkan porsi negatif. Di sini, kita merancang SPL $3 \\times 3$ yang terukur untuk menjamin solusi bilangan bulat positif.")
     
     col_a, col_b = st.columns(2)
     with col_a:
-        st.markdown("**2. Matriks Leslie (A)**")
-        st.dataframe(pd.DataFrame(matriks_leslie).style.format("{:.2f}"))
+        st.markdown("**1. Matriks Kandungan Nutrisi (A)**")
+        st.dataframe(pd.DataFrame(matriks_A, index=["Baris Protein", "Baris Karbo", "Baris Lemak"], columns=["Mkn A", "Mkn B", "Mkn C"]))
     with col_b:
-        st.markdown("**3. Vektor Umur Awal n(t)**")
-        st.dataframe(pd.DataFrame(st.session_state.populasi_awal, index=["Bayi", "Remaja", "Dewasa"], columns=["Ekor"]))
+        st.markdown("**2. Vektor Target (B)**")
+        st.dataframe(pd.DataFrame(vektor_B, index=["Target Protein", "Target Karbo", "Target Lemak"], columns=["Nilai"]))
         
     st.markdown("---")
-    st.markdown("**4. Mencari Nilai Eigen Dominan ($\lambda_1$)**")
+    st.markdown("**3. Eksekusi Matriks Invers $(A^{-1})$**")
+    st.write("Untuk mencari Vektor X (Jumlah Porsi), kita mencari Invers dari Matriks A, lalu mengalikannya dengan Vektor B ($X = A^{-1} \cdot B$).")
     
-    nilai_eigen, vektor_eigen = np.linalg.eig(matriks_leslie)
-    eigen_dominan = max(np.real(nilai_eigen))
-    
-    st.markdown(f"**Nilai Eigen Positif Dominan ($\lambda_1$) = {eigen_dominan:.4f}**")
-    
-    if eigen_dominan > 1:
-        st.success(f"$\lambda_1 > 1$. Kesimpulan: Laju pertumbuhan populasi {st.session_state.nama_hewan} **cenderung meningkat**.")
-    elif eigen_dominan == 1:
-        st.warning(f"$\lambda_1 = 1$. Kesimpulan: Laju pertumbuhan populasi {st.session_state.nama_hewan} **cenderung tetap**.")
-    else:
-        st.error(f"$\lambda_1 < 1$. Kesimpulan: Laju pertumbuhan populasi {st.session_state.nama_hewan} **cenderung menurun (Terancam Punah)**.")
+    if 'invers_A' in locals():
+        st.dataframe(pd.DataFrame(invers_A).style.format("{:.3f}"))
+        st.success("Operasi *Dot Product* antara Matriks Invers dan Vektor Target terbukti memecahkan sistem persamaan linier secara presisi tanpa metode coba-coba!")

@@ -50,41 +50,45 @@ with tab1:
     if st.button("🚀 Eksekusi Aljabar Linier (Jalankan PCA)", type="primary"):
         df = st.session_state['db_nutrisi']
         
-        # 1. Memisahkan Label dan Matriks Numerik
-        fitur_nutrisi = df[["Kalori (kkal)", "Lemak (g)", "Karbohidrat (g)", "Gula (g)", "Natrium/Garam (mg)"]]
-        
-        # 2. Standardisasi Matriks (Agar skala Garam(mg) dan Lemak(g) setara di mata Aljabar)
-        scaler = StandardScaler()
-        matriks_skala = scaler.fit_transform(fitur_nutrisi)
-        
-        # 3. PROSES INTI: Ekstraksi Vektor Eigen (PCA)
-        pca = PCA(n_components=2)
-        matriks_pca = pca.fit_transform(matriks_skala)
-        varians_tersimpan = pca.explained_variance_ratio_.sum() * 100
-        
-        # 4. Memasukkan hasil ke DataFrame untuk divisualisasikan
-        df_hasil = pd.DataFrame(matriks_pca, columns=["Komponen Utama 1 (Vektor X)", "Komponen Utama 2 (Vektor Y)"])
-        df_hasil["Nama Produk"] = df["Nama Produk"]
-        df_hasil["Kategori"] = df["Kategori"]
-        
-        st.write("---")
-        st.success(f"✅ Matriks berhasil direduksi! Meskipun dimensi dikompresi dari 5D ke 2D, kita masih mempertahankan **{varians_tersimpan:.2f}%** karakteristik asli data makanan.")
-        
-        # 5. OUTPUT VISUAL: Scatter Plot Interaktif menggunakan Plotly
-        st.write("### 🗺️ Peta Kedekatan Karakteristik Makanan")
-        st.caption("Titik yang saling berdekatan menunjukkan bahwa makanan tersebut memiliki profil gizi yang serupa secara aljabar.")
-        
-        fig = px.scatter(
-            df_hasil, 
-            x="Komponen Utama 1 (Vektor X)", 
-            y="Komponen Utama 2 (Vektor Y)", 
-            color="Kategori", 
-            text="Nama Produk",
-            size_max=15
-        )
-        fig.update_traces(textposition='top center', marker=dict(size=12))
-        fig.update_layout(height=600)
-        st.plotly_chart(fig, use_container_width=True)
+        # --- SISTEM PENGAMAN ERROR PCA ---
+        if len(df) < 2:
+            st.error("⚠️ **Peringatan Aljabar:** PCA membutuhkan minimal 2 jenis produk makanan untuk dapat mencari varians dan membandingkannya. Silakan isi kembali tabel di Tab 'Database Matriks'.")
+        else:
+            # 1. Memisahkan Label dan Matriks Numerik
+            fitur_nutrisi = df[["Kalori (kkal)", "Lemak (g)", "Karbohidrat (g)", "Gula (g)", "Natrium/Garam (mg)"]]
+            
+            # 2. Standardisasi Matriks
+            scaler = StandardScaler()
+            matriks_skala = scaler.fit_transform(fitur_nutrisi)
+            
+            # 3. PROSES INTI: Ekstraksi Vektor Eigen (PCA)
+            pca = PCA(n_components=2)
+            matriks_pca = pca.fit_transform(matriks_skala)
+            varians_tersimpan = pca.explained_variance_ratio_.sum() * 100
+            
+            # 4. Memasukkan hasil ke DataFrame untuk divisualisasikan
+            df_hasil = pd.DataFrame(matriks_pca, columns=["Komponen Utama 1 (Vektor X)", "Komponen Utama 2 (Vektor Y)"])
+            df_hasil["Nama Produk"] = df["Nama Produk"]
+            df_hasil["Kategori"] = df["Kategori"]
+            
+            st.write("---")
+            st.success(f"✅ Matriks berhasil direduksi! Meskipun dimensi dikompresi dari 5D ke 2D, kita masih mempertahankan **{varians_tersimpan:.2f}%** karakteristik asli data makanan.")
+            
+            # 5. OUTPUT VISUAL: Scatter Plot Interaktif menggunakan Plotly
+            st.write("### 🗺️ Peta Kedekatan Karakteristik Makanan")
+            st.caption("Titik yang saling berdekatan menunjukkan bahwa makanan tersebut memiliki profil gizi yang serupa secara aljabar.")
+            
+            fig = px.scatter(
+                df_hasil, 
+                x="Komponen Utama 1 (Vektor X)", 
+                y="Komponen Utama 2 (Vektor Y)", 
+                color="Kategori", 
+                text="Nama Produk",
+                size_max=15
+            )
+            fig.update_traces(textposition='top center', marker=dict(size=12))
+            fig.update_layout(height=600)
+            st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
 # TAB 2: DATABASE DATA MENTAH
@@ -96,7 +100,8 @@ with tab2:
     tabel_diedit = st.data_editor(
         st.session_state['db_nutrisi'], 
         num_rows="dynamic", 
-        use_container_width=True
+        use_container_width=True,
+        key="tabel_nutrisi" # Ditambahkan key agar tidak kereset saat baris dihapus
     )
     st.session_state['db_nutrisi'] = tabel_diedit
 

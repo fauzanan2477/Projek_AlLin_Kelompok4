@@ -116,12 +116,11 @@ with tab_aljabar:
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 🛒 Database Bahan Makanan (Pilih Lauk)")
     st.caption("Centang kolom **'Gunakan'** untuk mengikutkan makanan. Sesuaikan **'Porsi'** agar gizi anak anak terpenuhi.")
-    
+    st.caption("**'Keterangan'**: Harga dan Kandungan Gizi(Karbohidrat, Protein, dan Lemak) ditulis dalam nilai **'per 100 gram'**.")
+
     df_interaktif = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
     st.session_state['db_bahan'] = df_interaktif
     st.markdown('</div>', unsafe_allow_html=True)
-
-    st.caption("Keterangan: Harga dan Kandungan Gizi(KArobohidrat, Protein, dan Lemak) ditulis dalam nilai per 100 gram.")
     
     if st.button("🚀 Kalkulasi Biaya Termurah (Metode Simpleks)", type="primary", use_container_width=True):
         df_dipilih = df_interaktif[df_interaktif["Gunakan"] == True].copy()

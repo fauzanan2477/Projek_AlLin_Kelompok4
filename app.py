@@ -4,31 +4,34 @@ import numpy as np
 from scipy.optimize import linprog
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN & CSS KONTRAS TINGGI
 # ==========================================
 st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
 
 st.markdown("""
     <style>
-    /* Desain Background Putih & Kontainer Modern */
-    .stApp { background-color: #ffffff; }
+    /* Mengatur Background Utama menjadi Abu-abu sangat terang agar kontras dengan Box Putih */
+    .stApp { background-color: #f4f6f9; color: #111111; }
     .block-container { padding-top: 2rem; max-width: 1050px; }
     
-    /* Navbar Custom (Lebar dan Jelas) */
-    .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 50px; border-bottom: 2px solid #eaeaea; }
-    .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.25rem; color: #7f8c8d; background-color: transparent; border: none; padding-bottom: 10px;}
-    .stTabs [aria-selected="true"] { color: #2980b9; border-bottom: 4px solid #2980b9; }
+    /* Box Teks & Elemen UI berwarna Putih Bersih dengan Shadow */
+    .white-box { background-color: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; color: #333333;}
     
-    /* Hero Section */
-    .hero-section { text-align: center; padding: 20px 0px 40px 0px; }
-    .hero-title { font-size: 3.5rem; font-weight: 900; color: #2c3e50; line-height: 1.1; margin-bottom: 15px; letter-spacing: -1px;}
-    .hero-title span { color: #2980b9; }
-    .hero-subtitle { font-size: 1.2rem; color: #7f8c8d; font-weight: 500;}
+    /* Navbar Custom */
+    .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 30px; border-bottom: 2px solid #dcdde1; background-color: #ffffff; padding: 10px; border-radius: 10px; }
+    .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.15rem; color: #555555; background-color: transparent; border: none; }
+    .stTabs [aria-selected="true"] { color: #1e3799; border-bottom: 4px solid #1e3799; }
     
-    /* Card Hasil */
-    .result-card { background-color: #f4f9ff; border-radius: 12px; padding: 30px; text-align: center; border: 1px solid #dcebfa; margin: 20px 0px;}
-    .result-card h2 { color: #2980b9; font-size: 3.5rem; margin: 0; font-weight: 900;}
-    .result-card p { color: #34495e; font-size: 1rem; margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;}
+    /* Typography */
+    h1, h2, h3, h4, p { color: #111111 !important; }
+    .hero-title { font-size: 3.2rem; font-weight: 900; color: #000000 !important; line-height: 1.2; margin-bottom: 15px; text-align: center; }
+    .hero-title span { color: #1e3799 !important; }
+    .hero-subtitle { font-size: 1.2rem; color: #444444 !important; font-weight: 500; text-align: center; margin-bottom: 30px;}
+    
+    /* Card Hasil Termurah */
+    .result-card { background: linear-gradient(135deg, #1e3799, #0984e3); color: white !important; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);}
+    .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
+    .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -36,24 +39,22 @@ st.markdown("""
 # 2. HERO SECTION
 # ==========================================
 st.markdown("""
-<div class="hero-section">
-    <h1 class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></h1>
-    <p class="hero-subtitle">Integrasi Ilmu Gizi (Harris-Benedict) dan Aljabar Linier (Metode Simpleks)</p>
-</div>
+<div class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></div>
+<div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Matriks Simpleks)</div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. DATABASE MATRIKS (SESSION STATE)
+# 3. DATABASE (SESSION STATE)
 # ==========================================
 if 'db_bahan' not in st.session_state:
     st.session_state['db_bahan'] = pd.DataFrame({
-        "Gunakan": [True, True, True, True, False, True], # Checkbox
-        "Bahan Makanan": ["Nasi Putih", "Telur Ayam", "Tempe Murni", "Sayur Bayam", "Susu Sapi UHT", "Daging Ayam"],
+        "Gunakan": [True, True, True, True, False, True], 
+        "Bahan Makanan": ["Nasi Putih", "Telur Ayam", "Tempe Murni", "Sayur Bayam", "Susu Sapi", "Daging Ayam"],
         "Harga (Rp)": [1200, 2600, 1000, 800, 3000, 4500], 
         "Kalori (Kkal)": [130.0, 155.0, 193.0, 23.0, 60.0, 165.0],
         "Protein (g)": [2.7, 13.0, 19.0, 3.0, 3.2, 31.0],
         "Lemak (g)": [0.3, 11.0, 11.0, 0.4, 3.3, 3.6],
-        "Batas Maks (g)": [200.0, 100.0, 100.0, 150.0, 200.0, 150.0] # Batas agar porsi realistis
+        "Batas Maks (g)": [200.0, 100.0, 100.0, 150.0, 200.0, 150.0] 
     })
 
 if 'target_kalori' not in st.session_state:
@@ -62,12 +63,18 @@ if 'target_kalori' not in st.session_state:
 # ==========================================
 # 4. MENU NAVBAR (TABS)
 # ==========================================
-tab_gizi, tab_aljabar, tab_docs = st.tabs(["1. Kalkulator Gizi Anak", "2. Mesin Optimasi Aljabar", "3. Dokumentasi & Teori"])
+tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
+    "1. Kalkulator Gizi", 
+    "2. Eksekusi Optimasi", 
+    "3. Langkah Manual (Jurnal)", 
+    "4. Dokumentasi Rumus"
+])
 
 # --- HALAMAN 1: KALKULATOR GIZI ---
 with tab_gizi:
-    st.write("### 👦 Kalkulator Biometrik (Vektor Konstanta)")
-    st.write("Sistem menggunakan rumus BMR untuk menghitung kebutuhan 1 porsi makan siang anak (1/3 dari total harian). Angka ini akan menjadi matriks pembatas bagi algoritma aljabar.")
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")
+    st.write("Sistem menghitung target gizi anak (AKG) berdasarkan persamaan biometrik untuk digunakan sebagai batas matriks di halaman berikutnya.")
     
     col_bio1, col_bio2 = st.columns(2)
     with col_bio1:
@@ -77,103 +84,137 @@ with tab_gizi:
         bb = st.number_input("Berat Badan (kg)", min_value=15.0, value=30.0)
         tb = st.number_input("Tinggi Badan (cm)", min_value=100.0, value=135.0)
     
-    if st.button("Hitung Vektor Target Gizi", type="primary"):
-        # Rumus Harris Benedict
+    if st.button("Hitung Target & Simpan", type="primary"):
+        # Harris Benedict Formula
         if jk == "Laki-laki":
             bmr = 66.5 + (13.7 * bb) + (5 * tb) - (6.8 * umur)
         else:
             bmr = 655 + (9.6 * bb) + (1.8 * tb) - (4.7 * umur)
         
-        tdee = bmr * 1.55 # Faktor aktivitas anak sekolah aktif
+        porsi_kalori = (bmr * 1.55) / 3 
+        porsi_protein = (porsi_kalori * 0.15) / 4 
+        porsi_lemak = (porsi_kalori * 0.30) / 9 
         
-        # Target 1 porsi makan siang (MBG) = 1/3 Harian
-        porsi_kalori = tdee / 3 
-        porsi_protein = (porsi_kalori * 0.15) / 4 # 15% dari kalori
-        porsi_lemak = (porsi_kalori * 0.30) / 9 # 30% dari kalori
-        
-        # Simpan ke memori sesi
         st.session_state['target_kalori'] = round(porsi_kalori, 1)
         st.session_state['target_protein'] = round(porsi_protein, 1)
         st.session_state['target_lemak'] = round(porsi_lemak, 1)
-        st.success("Target berhasil diperbarui! Silakan buka Tab 2 untuk optimasi.")
+        st.success("Target Vektor Gizi berhasil diperbarui! Lanjut ke Tab 2.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    col_t1, col_t2, col_t3 = st.columns(3)
-    col_t1.metric("Target Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
-    col_t2.metric("Target Protein Minimal", f"{st.session_state['target_protein']} g")
-    col_t3.metric("Target Lemak Minimal", f"{st.session_state['target_lemak']} g")
-
-# --- HALAMAN 2: MESIN OPTIMASI ALJABAR (SIMPLEKS) ---
+# --- HALAMAN 2: EKSEKUSI OPTIMASI (ALJABAR) ---
 with tab_aljabar:
-    st.write("### 🛒 Database Bahan Makanan (Matriks Input)")
-    st.caption("Centang kolom **'Gunakan'** untuk memilih makanan hari ini. Sesuaikan **'Batas Maks'** agar aplikasi memvariasikan porsi lauk.")
+    # MENAMPILKAN TARGET GIZI SEBAGAI PENGINGAT
+    st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
+    st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks):")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
+    c2.metric("Protein Minimal", f"{st.session_state['target_protein']} Gram")
+    c3.metric("Lemak Minimal", f"{st.session_state['target_lemak']} Gram")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### 🛒 Database Bahan Makanan (Pilih Lauk)")
+    st.caption("Centang kolom **'Gunakan'** untuk mengikutkan makanan. Sesuaikan **'Batas Maks'** agar porsi anak bervariasi.")
     
-    # Tabel Data
     df_interaktif = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
     st.session_state['db_bahan'] = df_interaktif
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    st.write("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚀 Jalankan Operasi Matriks (Cari Biaya Termurah)", type="primary", use_container_width=True):
+    if st.button("🚀 Kalkulasi Biaya Termurah (Metode Simpleks)", type="primary", use_container_width=True):
         df_dipilih = df_interaktif[df_interaktif["Gunakan"] == True].copy()
         
         if len(df_dipilih) < 2:
-            st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")
+            st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi.")
         else:
-            # 1. Pastikan semua data adalah angka
             harga = pd.to_numeric(df_dipilih["Harga (Rp)"], errors='coerce').fillna(0).values
             gizi = df_dipilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0)
+            batas_multiplier = pd.to_numeric(df_dipilih["Batas Maks (g)"], errors='coerce').fillna(1000).values / 100.0
             
-            # Batas Maksimal (Diubah ke satuan pengali per 100 gram)
-            batas_gram = pd.to_numeric(df_dipilih["Batas Maks (g)"], errors='coerce').fillna(1000).values
-            batas_multiplier = batas_gram / 100.0
-            
-            # 2. Setup Persamaan SPL (Dikali -1 untuk mengubah <= menjadi >=)
             A_ub = -1 * gizi.values.T
             b_ub = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak']])
-            
-            # Batas Bawah dan Batas Atas Makanan (0 sampai Batas Maksimal)
             batas = [(0, maks) for maks in batas_multiplier]
             
-            # 3. Eksekusi Simpleks
             try:
                 hasil = linprog(harga, A_ub=A_ub, b_ub=b_ub, bounds=batas, method='highs')
                 
                 if hasil.success:
                     st.markdown(f"""
                     <div class="result-card">
-                        <p>Titik Potong SPL Ditemukan! Total Biaya Termurah</p>
+                        <p>Total Biaya Paling Minimum (Titik Optimal)</p>
                         <h2>Rp {hasil.fun:,.0f}</h2>
-                        <p style="color:#666; font-size:1rem; font-weight:normal; margin-top:5px;">Per Porsi / Anak</p>
+                        <p>Per Anak / Sekali Makan</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    st.write("### ⚖️ Vektor Penyelesaian (Kombinasi Porsi yang Realistis)")
+                    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+                    st.write("### ⚖️ Vektor Rekomendasi Takaran")
                     hasil_gram = hasil.x * 100 
                     df_hasil = pd.DataFrame({
                         "Bahan Makanan": df_dipilih["Bahan Makanan"].values,
                         "Takaran Disarankan": [f"{g:,.0f} Gram" for g in hasil_gram],
-                        "Alokasi Harga": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, harga)]
+                        "Biaya Realisasi": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, harga)]
                     })
-                    # Tampilkan yang porsinya nyata (> 0)
                     st.table(df_hasil[hasil.x > 0.01].reset_index(drop=True))
-                    
+                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.error("🚨 Matriks Infeasible: Sistem tidak bisa memenuhi target gizi dengan kombinasi makanan yang dicentang. Coba naikkan 'Batas Maks' makanan, atau tambah variasi lauk di tabel.")
+                    st.error("🚨 SPL Infeasible: Sistem tidak bisa memenuhi target gizi dengan lauk yang dipilih. Coba naikkan 'Batas Maks' makanan.")
             except Exception as e:
-                st.error(f"Terjadi kesalahan komputasi: {e}")
+                st.error(f"Error komputasi: {e}")
 
-# --- HALAMAN 3: DOKUMENTASI (RUMUS) ---
-with tab_docs:
-    st.write("### 📖 Integrasi Rumus Biometrik dan Aljabar Linier")
-    st.write("**1. Penentuan Vektor Konstanta (Target Gizi)**")
-    st.write("Target gizi minimal tidak ditebak, melainkan dihitung berdasarkan modifikasi persamaan Harris-Benedict (AKG Kemenkes) untuk Anak Sekolah:")
-    st.latex(r"BMR_{Laki} = 66.5 + (13.7 \times BB) + (5 \times TB) - (6.8 \times Umur)")
-    st.write("Angka $BMR$ dikalikan faktor aktivitas, lalu dibagi tiga (untuk 1 porsi makan siang) yang bertindak sebagai Vektor Target $B$.")
+# --- HALAMAN 3: LANGKAH MANUAL (BARU) ---
+with tab_manual:
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### ✍️ Urutan Perhitungan Manual Metode Simpleks (Sesuai Jurnal)")
+    st.write("Bagaimana cara komputer atau manusia menemukan harga termurah di belakang layar? Berikut adalah langkah-langkah aljabarnya.")
     
-    st.write("---")
-    st.write("**2. Sistem Persamaan Linier (Metode Simpleks)**")
-    st.write("Masalah optimasi ini dipetakan ke dalam ruang vektor. Komputer diperintahkan untuk mencari titik paling minimum dari Fungsi Objektif (Biaya):")
-    st.latex(r"Z = \mathbf{C}^T \mathbf{X}")
-    st.write("Dengan batasan matriks (Gizi harus terpenuhi, namun porsi makanan memiliki batas atas agar realistis):")
-    st.latex(r"\mathbf{A}\mathbf{X} \ge \mathbf{B} \quad \text{dan} \quad 0 \le \mathbf{X} \le \mathbf{U_{maks}}")
-    st.info("Dengan adanya Vektor $\mathbf{U_{maks}}$ (Batas Maksimal), aljabar Linier dipaksa mengkombinasikan berbagai lauk, mencegah mesin menyarankan anak memakan 1 porsi ekstrem (seperti 1 Kg tempe saja).")
+    st.write("#### Langkah 1: Model Matematika (Sistem Persamaan Linier)")
+    st.write("Menetapkan fungsi minimum dan fungsi kendala berdasarkan makanan yang dipilih.")
+    st.latex(r"\text{Minimumkan: } Z = 1200x_1 + 2600x_2 + 1000x_3 + \dots")
+    st.latex(r"\text{Kendala 1 (Kalori): } 130x_1 + 155x_2 + 193x_3 \ge 600")
+    st.latex(r"\text{Kendala 2 (Protein): } 2.7x_1 + 13x_2 + 19x_3 \ge 25")
+    
+    st.write("#### Langkah 2: Bentuk Kanonik (Penambahan Slack/Surplus Variables)")
+    st.write("Pertidaksamaan ($\ge$) tidak bisa dihitung dalam matriks. Maka ditambahkan variabel bayangan (S) untuk mengubahnya menjadi persamaan ($=$).")
+    st.latex(r"130x_1 + 155x_2 + 193x_3 - S_1 = 600")
+    st.latex(r"2.7x_1 + 13x_2 + 19x_3 - S_2 = 25")
+    
+    st.write("#### Langkah 3: Membangun Tabel Simpleks (Initial Tableau)")
+    st.write("Memasukkan semua koefisien variabel ($x$ dan $S$) ke dalam format matriks M x N.")
+    
+    # Menampilkan contoh tabel simpleks menggunakan dataframe agar rapi
+    df_tableau = pd.DataFrame({
+        "Basis": ["S1", "S2", "Z"],
+        "x1": ["130", "2.7", "-1200"],
+        "x2": ["155", "13", "-2600"],
+        "x3": ["193", "19", "-1000"],
+        "S1": ["-1", "0", "0"],
+        "S2": ["0", "-1", "0"],
+        "Nilai Kanan (B)": ["600", "25", "0"]
+    })
+    st.table(df_tableau)
+    
+    st.write("#### Langkah 4: Iterasi Matriks (Operasi Baris Elementer)")
+    st.write("1. **Menentukan Kolom Pivot:** Memilih kolom dengan nilai Z paling negatif.")
+    st.write("2. **Menentukan Baris Pivot:** Membagi Nilai Kanan (B) dengan Kolom Pivot untuk mencari indeks terkecil (Variabel yang Keluar).")
+    st.write("3. **Operasi Baris Elementer (OBE):** Mengubah elemen Pivot menjadi 1, dan elemen lain di kolom tersebut menjadi 0, persis seperti mencari Invers Matriks.")
+    
+    st.write("#### Langkah 5: Syarat Optimal")
+    st.success("Iterasi OBE dilakukan berulang-ulang hingga **tidak ada lagi nilai negatif** pada baris $Z$. Saat itu terjadi, nilai di kolom paling kanan (B) pada baris Z adalah harga mutlak termurahnya!")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- HALAMAN 4: DOKUMENTASI (RUMUS) ---
+with tab_docs:
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### 📖 Integrasi Matriks Aljabar")
+    st.write("Sistem Persamaan Linier dimodelkan dengan notasi matriks abstrak:")
+    st.latex(r"\text{Fungsi Minimum: } Z = \mathbf{C}^T \mathbf{X}")
+    st.latex(r"\text{Batasan Mutlak (Matriks): } \mathbf{A}\mathbf{X} \ge \mathbf{B}")
+    
+    st.write("Penjelasan Variabel Ruang Vektor:")
+    st.markdown("""
+    - $C$ : Vektor harga makanan.
+    - $X$ : Vektor penyelesaian (takaran/porsi makanan).
+    - $A$ : Matriks kandungan gizi.
+    - $B$ : Vektor target minimal nutrisi anak.
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)

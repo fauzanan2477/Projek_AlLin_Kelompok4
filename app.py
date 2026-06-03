@@ -33,6 +33,7 @@ st.markdown("""
     .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
     .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
     </style>
+            
 """, unsafe_allow_html=True)
 
 # ==========================================
@@ -54,7 +55,7 @@ if 'db_bahan' not in st.session_state:
         "Kalori (Kkal)": [130.0, 155.0, 193.0, 23.0, 60.0, 165.0],
         "Protein (g)": [2.7, 13.0, 19.0, 3.0, 3.2, 31.0],
         "Lemak (g)": [0.3, 11.0, 11.0, 0.4, 3.3, 3.6],
-        "Batas Maks (g)": [200.0, 100.0, 100.0, 150.0, 200.0, 150.0] 
+        "Porsi (g)": [200.0, 100.0, 100.0, 150.0, 200.0, 150.0] 
     })
 
 if 'target_kalori' not in st.session_state:
@@ -114,7 +115,7 @@ with tab_aljabar:
 
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 🛒 Database Bahan Makanan (Pilih Lauk)")
-    st.caption("Centang kolom **'Gunakan'** untuk mengikutkan makanan. Sesuaikan **'Batas Maks'** agar porsi anak bervariasi.")
+    st.caption("Centang kolom **'Gunakan'** untuk mengikutkan makanan. Sesuaikan **'Porsi'** agar gizi anak anak terpenuhi.")
     
     df_interaktif = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
     st.session_state['db_bahan'] = df_interaktif
@@ -128,14 +129,14 @@ with tab_aljabar:
         else:
             harga = pd.to_numeric(df_dipilih["Harga (Rp)"], errors='coerce').fillna(0).values
             gizi = df_dipilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0)
-            batas_multiplier = pd.to_numeric(df_dipilih["Batas Maks (g)"], errors='coerce').fillna(1000).values / 100.0
+            porsi_makan = pd.to_numeric(df_dipilih["Porsi (g)"], errors='coerce').fillna(1000).values / 100.0
             
             A_ub = -1 * gizi.values.T
             b_ub = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak']])
-            batas = [(0, maks) for maks in batas_multiplier]
+            porsi = [(0, maks) for maks in porsi_makan]
             
             try:
-                hasil = linprog(harga, A_ub=A_ub, b_ub=b_ub, bounds=batas, method='highs')
+                hasil = linprog(harga, A_ub=A_ub, b_ub=b_ub, bounds=porsi, method='highs')
                 
                 if hasil.success:
                     st.markdown(f"""

@@ -16,7 +16,11 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 30px; border-bottom: 2px solid #dcdde1; background-color: #ffffff; padding: 10px; border-radius: 10px; }
     .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.15rem; color: #555555; background-color: transparent; border: none; }
     .stTabs [aria-selected="true"] { color: #1e3799; border-bottom: 4px solid #1e3799; }
-    h1, h2, h3, h4, p, li { color: #111111 !important; }
+    
+    /* REVISI CSS: Menghapus paksaan warna hitam pada list <li> global agar tidak merusak Dropdown Dark Mode */
+    h1, h2, h3, h4, p { color: #111111 !important; }
+    .white-box li { color: #333333; } 
+    
     .hero-title { font-size: 3.2rem; font-weight: 900; color: #000000 !important; line-height: 1.2; margin-bottom: 15px; text-align: center; }
     .hero-title span { color: #1e3799 !important; }
     .hero-subtitle { font-size: 1.2rem; color: #444444 !important; font-weight: 500; text-align: center; margin-bottom: 30px;}
@@ -50,12 +54,11 @@ if 'db_bahan' not in st.session_state:
     })
 
 if 'target_kalori' not in st.session_state:
-    # State default jika belum klik hitung
     st.session_state.update({
-        'target_kalori': 600.0, 'target_protein': 22.5, 'target_lemak': 20.0, 'target_karbo': 82.5,
-        'aktivitas_val': 1.55, 'bmr_val': 1161.0, 'bb_val': 30, 'tb_val': 135,
-        'rumus_amb_teks': r"\text{AMB (P)} = 16.97 Wt + 161.8 Ht + 371.2",
-        'rumus_amb_angka': r"\text{AMB (P)} = (16.97 \times 30.0) + (161.8 \times 1.35) + 371.2"
+        'target_kalori': 1800.0, 'target_protein': 67.5, 'target_lemak': 60.0, 'target_karbo': 247.5,
+        'aktivitas_val': 1.55, 'bmr_val': 1161.0, 'bb_val': 30, 'tb_val': 135, 'pembagi_val': 1,
+        'rumus_amb_teks': r"\text{AMB (P)} = 16.969 Wt + 161.8 Ht + 371.2",
+        'rumus_amb_angka': r"\text{AMB (P)} = (16.969 \times 30.0) + (161.8 \times 1.35) + 371.2"
     })
 
 # ==========================================
@@ -76,7 +79,6 @@ with tab_gizi:
     
     col_bio1, col_bio2 = st.columns(2)
     with col_bio1:
-        # Range umur diperlebar agar mencakup kondisi anak usia 0-3 tahun sesuai jurnal
         umur = st.number_input("Umur Anak (Tahun)", min_value=1, max_value=18, value=10)
         jk = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
         aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", [
@@ -90,6 +92,10 @@ with tab_gizi:
     with col_bio2:
         bb = st.number_input("Berat Badan / Wt (kg)", min_value=5.0, value=30.0)
         tb = st.number_input("Tinggi Badan / Ht (cm)", min_value=50.0, value=135.0)
+        target_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", [
+            "1 Hari Penuh (Persis Jurnal UB)", 
+            "1x Makan Siang (Program MBG - Dibagi 3)"
+        ])
     
     if st.button("Hitung Target & Simpan", type="primary"):
         # 1. Menentukan Multiplier Olahraga
@@ -99,8 +105,8 @@ with tab_gizi:
         elif aktivitas == "Sering (Olahraga berat 6-7 hari/minggu)": multiplier = 1.725
         else: multiplier = 1.9
 
-        # 2. Rumus AMB Schofield (Persis seperti Jurnal UB / Screenshot)
-        tb_m = tb / 100.0 # Konversi ke meter sesuai rumus Schofield
+        # 2. Rumus AMB Schofield (Persis Jurnal UB)
+        tb_m = tb / 100.0 
         
         if jk == "Laki-laki":
             if umur <= 3:
@@ -108,10 +114,10 @@ with tab_gizi:
                 r_teks = r"\text{AMB (L)} = 0.167 Wt + 1517.4 Ht - 617.6"
                 r_angka = f"\\text{{AMB (L)}} = (0.167 \\times {bb}) + (1517.4 \\times {tb_m}) - 617.6"
             elif umur <= 10:
-                bmr = (19.6 * bb) + (130.3 * tb_m) + 414.9
-                r_teks = r"\text{AMB (L)} = 19.6 Wt + 130.3 Ht + 414.9"
-                r_angka = f"\\text{{AMB (L)}} = (19.6 \\times {bb}) + (130.3 \\times {tb_m}) + 414.9"
-            else: # 11-18 tahun
+                bmr = (19.59 * bb) + (130.3 * tb_m) + 414.9
+                r_teks = r"\text{AMB (L)} = 19.59 Wt + 130.3 Ht + 414.9"
+                r_angka = f"\\text{{AMB (L)}} = (19.59 \\times {bb}) + (130.3 \\times {tb_m}) + 414.9"
+            else: 
                 bmr = (16.25 * bb) + (137.2 * tb_m) + 515.5
                 r_teks = r"\text{AMB (L)} = 16.25 Wt + 137.2 Ht + 515.5"
                 r_angka = f"\\text{{AMB (L)}} = (16.25 \\times {bb}) + (137.2 \\times {tb_m}) + 515.5"
@@ -121,28 +127,29 @@ with tab_gizi:
                 r_teks = r"\text{AMB (P)} = 16.25 Wt + 1023.2 Ht - 413.5"
                 r_angka = f"\\text{{AMB (P)}} = (16.25 \\times {bb}) + (1023.2 \\times {tb_m}) - 413.5"
             elif umur <= 10:
-                bmr = (16.97 * bb) + (161.8 * tb_m) + 371.2
-                r_teks = r"\text{AMB (P)} = 16.97 Wt + 161.8 Ht + 371.2"
-                r_angka = f"\\text{{AMB (P)}} = (16.97 \\times {bb}) + (161.8 \\times {tb_m}) + 371.2"
-            else: # 11-18 tahun
+                bmr = (16.969 * bb) + (161.8 * tb_m) + 371.2
+                r_teks = r"\text{AMB (P)} = 16.969 Wt + 161.8 Ht + 371.2"
+                r_angka = f"\\text{{AMB (P)}} = (16.969 \\times {bb}) + (161.8 \\times {tb_m}) + 371.2"
+            else: 
                 bmr = (8.365 * bb) + (465.0 * tb_m) + 200.0
                 r_teks = r"\text{AMB (P)} = 8.365 Wt + 465 Ht + 200"
                 r_angka = f"\\text{{AMB (P)}} = (8.365 \\times {bb}) + (465.0 \\times {tb_m}) + 200.0"
         
         # 3. Kebutuhan Makro
-        porsi_kalori = (bmr * multiplier) / 3 
+        pembagi = 1 if target_waktu == "1 Hari Penuh (Persis Jurnal UB)" else 3
+        
+        porsi_kalori = (bmr * multiplier) / pembagi
         porsi_protein = (porsi_kalori * 0.15) / 4 
         porsi_lemak = (porsi_kalori * 0.30) / 9 
         porsi_karbo = (porsi_kalori * 0.55) / 4 
         
-        # Simpan ke Session State untuk dibaca Tab 3
         st.session_state.update({
-            'bmr_val': round(bmr, 1), 'aktivitas_val': multiplier,
+            'bmr_val': round(bmr, 1), 'aktivitas_val': multiplier, 'pembagi_val': pembagi,
             'target_kalori': round(porsi_kalori, 1), 'target_protein': round(porsi_protein, 1),
             'target_lemak': round(porsi_lemak, 1), 'target_karbo': round(porsi_karbo, 1),
             'rumus_amb_teks': r_teks, 'rumus_amb_angka': r_angka
         })
-        st.success(f"Target Gizi diperbarui dengan Rumus AMB Schofield (Sesuai Jurnal UB)! Lanjut ke Tab 2.")
+        st.success(f"Target Gizi diperbarui ({target_waktu})! Lanjut ke Tab 2.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
@@ -184,7 +191,7 @@ with tab_aljabar:
                     <div class="result-card">
                         <p>Total Biaya Paling Minimum (Titik Optimal)</p>
                         <h2>Rp {hasil.fun:,.0f}</h2>
-                        <p>Per Anak / Sekali Makan</p>
+                        <p>Solusi Makanan Termurah Sesuai Target Waktu</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -224,10 +231,15 @@ with tab_manual:
     st.latex(r"TEE = AMB \times \text{Faktor Aktivitas (PAL)}")
     st.latex(f"TEE = {st.session_state['bmr_val']} \\times {st.session_state['aktivitas_val']} = {round(st.session_state['bmr_val'] * st.session_state['aktivitas_val'], 1)} \\text{{ Kkal}}")
     
-    st.markdown("**3. Target Kalori 1 Porsi (K)**")
-    st.write("Kebutuhan harian dibagi 3 (proporsi untuk 1x makan siang MBG).")
-    st.latex(r"K = \frac{TEE}{3}")
-    st.latex(f"K = \\frac{{{round(st.session_state['bmr_val'] * st.session_state['aktivitas_val'], 1)}}}{{3}} = {st.session_state['target_kalori']} \\text{{ Kkal}}")
+    st.markdown("**3. Target Kalori Akhir (K)**")
+    if st.session_state.get('pembagi_val', 3) == 1:
+        st.write("Karena skenario yang dipilih adalah **1 Hari Penuh**, TEE tidak dibagi dan langsung dihitung secara total.")
+        st.latex(r"K = TEE")
+        st.latex(f"K = {st.session_state['target_kalori']} \\text{{ Kkal}}")
+    else:
+        st.write("Kebutuhan harian dibagi 3 (proporsi khusus untuk 1x Makan Siang MBG).")
+        st.latex(r"K = \frac{TEE}{3}")
+        st.latex(f"K = \\frac{{{round(st.session_state['bmr_val'] * st.session_state['aktivitas_val'], 1)}}}{{3}} = {st.session_state['target_kalori']} \\text{{ Kkal}}")
     
     st.markdown("**4. Distribusi Vektor Makronutrien (Gramasi)**")
     st.write("Sesuai standar nutrisi medis, total kalori dipecah menjadi persentase Protein (15%), Lemak (30%), dan Karbohidrat (55%).")
@@ -268,10 +280,11 @@ with tab_manual:
         
         st.write("---")
         st.write("#### TAHAP 4: FASE 1 (Mencari Solusi Awal Fisibel)")
-        st.write("Pada Fase 1, nilai uang (Z) diabaikan sementara. Tujuan algoritma diubah menjadi **meminimalkan total Variabel Semu ($W = R_1 + R_2 + R_3 + R_4$)**. Jika $W$ berhasil menyentuh $0$, berarti kombinasi porsi makanan yang masuk akal (tidak minus) telah ditemukan.")
+        st.write("Pada Fase 1, nilai uang (Z) diabaikan sementara. Tujuan algoritma diubah menjadi **meminimalkan total Variabel Semu ($W = R_1 + R_2 + R_3 + R_4$)**.")
+        st.write("Agar tabel valid secara matematis, koefisien pada baris $W$ harus disubstitusikan (dikurangi) dengan nilai dari baris kendala sehingga koefisien awal $R$ menjadi $0$.")
         st.latex(r"\text{Fungsi Tujuan Fase 1: Minimasi } W = R_1 + R_2 + R_3 + R_4")
         
-        # Matriks Dinamis Fase 1 
+        # Matriks Dinamis Fase 1 (Diperbarui secara Matematis untuk Substitusi R)
         kolom_x = [f"x{i+1}" for i in range(len(df_aktif))]
         kolom_lengkap = ["Basis"] + kolom_x + ["S1", "S2", "S3", "S4", "R1", "R2", "R3", "R4", "NK (B)"]
         
@@ -279,11 +292,23 @@ with tab_manual:
         baris_r2 = ["R2"] + list(df_aktif["Protein (g)"]) + [0, -1, 0, 0,  0, 1, 0, 0, st.session_state['target_protein']]
         baris_r3 = ["R3"] + list(df_aktif["Lemak (g)"]) + [0, 0, -1, 0,  0, 0, 1, 0, st.session_state['target_lemak']]
         baris_r4 = ["R4"] + list(df_aktif["Karbohidrat (g)"]) + [0, 0, 0, -1,  0, 0, 0, 1, st.session_state['target_karbo']]
-        baris_w  = ["W (Z-Fase 1)"] + [0]*len(df_aktif) + [0, 0, 0, 0,  -1, -1, -1, -1, 0] 
+        
+        # Perhitungan matematis baris W yang BENAR (Substitusi)
+        baris_w = ["W (Fase 1)"]
+        for i in range(len(df_aktif)):
+            # Koefisien X di baris W adalah penjumlahan seluruh koefisien X di kendala
+            sum_x = df_aktif.loc[i, "Kalori (Kkal)"] + df_aktif.loc[i, "Protein (g)"] + df_aktif.loc[i, "Lemak (g)"] + df_aktif.loc[i, "Karbohidrat (g)"]
+            baris_w.append(sum_x)
+            
+        baris_w.extend([-1, -1, -1, -1]) # Koefisien S
+        baris_w.extend([0, 0, 0, 0])     # Koefisien R (sudah 0 karena disubstitusi)
+        
+        sum_b = st.session_state['target_kalori'] + st.session_state['target_protein'] + st.session_state['target_lemak'] + st.session_state['target_karbo']
+        baris_w.append(sum_b) # Nilai Kanan (B)
         
         df_matriks = pd.DataFrame([baris_r1, baris_r2, baris_r3, baris_r4, baris_w], columns=kolom_lengkap)
         st.dataframe(df_matriks.style.format(precision=1), use_container_width=True, hide_index=True)
-        st.caption("📌 *Ini adalah Tableau Initial Fase 1. Operasi Baris Elementer (OBE) akan mereduksi matriks ini hingga nilai pada baris W tidak ada lagi yang negatif.*")
+        st.caption("📌 *Ini adalah Tableau Initial Fase 1 yang sudah ter-substitusi. Operasi Baris Elementer (OBE) akan mereduksi matriks ini hingga nilai pada baris W tidak ada lagi yang positif/negatif (mencapai 0).*")
         
         st.write("---")
         st.write("#### TAHAP 5: FASE 2 (Optimasi Biaya Termurah)")

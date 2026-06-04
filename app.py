@@ -4,9 +4,10 @@ import numpy as np
 from scipy.optimize import linprog
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CSS
+# 1. KONFIGURASI HALAMAN & CSS KONTRAS TINGGI
 # ==========================================
 st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
+
 st.markdown("""
     <style>
     .stApp { background-color: #f4f6f9; color: #111111; }
@@ -15,23 +16,34 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 30px; border-bottom: 2px solid #dcdde1; background-color: #ffffff; padding: 10px; border-radius: 10px; }
     .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.15rem; color: #555555; background-color: transparent; border: none; }
     .stTabs [aria-selected="true"] { color: #1e3799; border-bottom: 4px solid #1e3799; }
-    .white-box h1, .white-box h2, .white-box h3, .white-box h4, .white-box p, .white-box li { color: #111111; }
+    
+    /* REVISI CSS: Menghapus paksaan warna hitam pada list <li> global agar tidak merusak Dropdown Dark Mode */
+    h1, h2, h3, h4, p { color: #111111 !important; }
+    .white-box li { color: #333333; } 
+    
     .hero-title { font-size: 3.2rem; font-weight: 900; color: #000000 !important; line-height: 1.2; margin-bottom: 15px; text-align: center; }
     .hero-title span { color: #1e3799 !important; }
     .hero-subtitle { font-size: 1.2rem; color: #444444 !important; font-weight: 500; text-align: center; margin-bottom: 30px;}
     .result-card { background: linear-gradient(135deg, #1e3799, #0984e3); color: white !important; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);}
-    div[data-baseweb="select"] > div { background-color: transparent; }
+    .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
+    .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
     </style>
-    <div class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></div>
-    <div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Simpleks Dua Fase)</div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. INISIALISASI DATABASE (SESSION STATE)
+# 2. HERO SECTION
+# ==========================================
+st.markdown("""
+<div class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></div>
+<div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Simpleks Dua Fase)</div>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 3. DATABASE (SESSION STATE)
 # ==========================================
 if 'db_bahan' not in st.session_state:
     st.session_state['db_bahan'] = pd.DataFrame({
-        "Gunakan": [True]*4 + [False, True], 
+        "Gunakan": [True, True, True, True, False, True], 
         "Bahan Makanan": ["Nasi Putih", "Telur Ayam", "Tempe Murni", "Sayur Bayam", "Susu Sapi", "Daging Ayam"],
         "Harga (Rp)": [1200, 2600, 1000, 800, 3000, 4500], 
         "Kalori (Kkal)": [130.0, 155.0, 193.0, 23.0, 60.0, 165.0],
@@ -41,120 +53,173 @@ if 'db_bahan' not in st.session_state:
         "Porsi (g)": [200.0, 100.0, 100.0, 150.0, 200.0, 150.0] 
     })
 
-st.session_state.setdefault('gizi', {'kalori': 1800.0, 'protein': 45.0, 'lemak': 40.0, 'karbo': 202.5, 'bmr': 1161.0, 'pal': 1.55, 'bagi': 1, 'r_t': "", 'r_a': ""})
+if 'target_kalori' not in st.session_state:
+    st.session_state.update({
+        'target_kalori': 1800.0, 'target_protein': 45.0, 'target_lemak': 40.0, 'target_karbo': 202.5,
+        'aktivitas_val': 1.55, 'bmr_val': 1161.0, 'pembagi_val': 1,
+        'rumus_amb_teks': r"\text{AMB (P)} = 16.969 Wt + 161.8 Ht + 371.2",
+        'rumus_amb_angka': r"\text{AMB (P)} = (16.969 \times 30.0) + (161.8 \times 1.35) + 371.2"
+    })
 
 # ==========================================
-# 3. TABS UI
+# 4. MENU NAVBAR (TABS)
 # ==========================================
-tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs(["1. Kalkulator Gizi", "2. Eksekusi Optimasi", "3. Langkah Manual", "4. Dokumentasi Rumus"])
+tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs(["1. Kalkulator Gizi", "2. Eksekusi Optimasi", "3. Langkah Manual (Sangat Detail)", "4. Dokumentasi Rumus"])
 
-# --- TAB 1: KALKULATOR GIZI ---
+# --- HALAMAN 1: KALKULATOR GIZI ---
 with tab_gizi:
-    st.markdown('<div class="white-box"><h3>👦 Penentuan Vektor Konstanta Gizi (B)</h3>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    umur = c1.number_input("Umur (Tahun)", 1, 18, 10)
-    jk = c1.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
-    act_idx = c1.selectbox("Tingkat Aktivitas", ["Sangat Jarang", "Jarang", "Cukup", "Sering", "Sangat Sering"], index=2)
-    bb = c2.number_input("Berat Badan (kg)", 5.0, value=30.0)
-    tb_m = c2.number_input("Tinggi Badan (cm)", 50.0, value=135.0) / 100.0
-    waktu = c2.selectbox("Target Pemenuhan", ["1 Hari Penuh (Persis Jurnal UB)", "1x Makan Siang (Dibagi 3)"])
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")
+    st.write("Sistem menghitung target Makronutrien anak berdasarkan **Persamaan AMB Schofield** dan tingkat aktivitas fisik (Merujuk pada Jurnal Brawijaya).")
+    
+    col_bio1, col_bio2 = st.columns(2)
+    with col_bio1:
+        umur = st.number_input("Umur Anak (Tahun)", min_value=1, max_value=18, value=10)
+        jk = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+        aktivitas = st.selectbox("Tingkat Aktivitas Fisik", ["Sangat Jarang (Pasif / Tidak olahraga)", "Jarang (Olahraga ringan 1-3 hari/minggu)", "Cukup (Olahraga sedang 3-5 hari/minggu)", "Sering (Olahraga berat 6-7 hari/minggu)", "Sangat Sering (Atlet / Fisik ekstra)"], index=2)
+        
+    with col_bio2:
+        bb = st.number_input("Berat Badan / Wt (kg)", min_value=5.0, value=30.0)
+        tb = st.number_input("Tinggi Badan / Ht (cm)", min_value=50.0, value=135.0)
+        target_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", ["1 Hari Penuh (Persis Jurnal UB)", "1x Makan Siang (Program MBG - Dibagi 3)"])
     
     if st.button("Hitung Target & Simpan", type="primary"):
-        pal = [1.2, 1.375, 1.55, 1.725, 1.9][["Sangat Jarang", "Jarang", "Cukup", "Sering", "Sangat Sering"].index(act_idx)]
-        
-        # Logika BMR Disempurnakan (Ternary / Padat)
+        # 1. Menentukan Multiplier Olahraga (Dictionary sederhana)
+        act_map = {"Sangat Jarang (Pasif / Tidak olahraga)": 1.2, "Jarang (Olahraga ringan 1-3 hari/minggu)": 1.375, "Cukup (Olahraga sedang 3-5 hari/minggu)": 1.55, "Sering (Olahraga berat 6-7 hari/minggu)": 1.725, "Sangat Sering (Atlet / Fisik ekstra)": 1.9}
+        multiplier = act_map[aktivitas]
+
+        # 2. Rumus AMB Schofield (Disederhanakan logikanya)
+        tb_m = tb / 100.0 
         if jk == "Laki-laki":
-            bmr = (0.167*bb + 1517.4*tb_m - 617.6) if umur <= 3 else (19.6*bb + 130.3*tb_m + 414.9) if umur <= 10 else (16.25*bb + 137.2*tb_m + 515.5)
-            r_t = r"\text{AMB (L)} = " + ("0.167 Wt + 1517.4 Ht - 617.6" if umur <= 3 else "19.6 Wt + 130.3 Ht + 414.9" if umur <= 10 else "16.25 Wt + 137.2 Ht + 515.5")
-            r_a = f"\\text{{AMB (L)}} = " + (f"(0.167 \\times {bb}) + (1517.4 \\times {tb_m}) - 617.6" if umur <= 3 else f"(19.6 \\times {bb}) + (130.3 \\times {tb_m}) + 414.9" if umur <= 10 else f"(16.25 \\times {bb}) + (137.2 \\times {tb_m}) + 515.5")
+            c_w, c_h, c_c = (0.167, 1517.4, -617.6) if umur <= 3 else (19.59, 130.3, 414.9) if umur <= 10 else (16.25, 137.2, 515.5)
+            lbl = "L"
         else:
-            bmr = (16.25*bb + 1023.2*tb_m - 413.5) if umur <= 3 else (16.97*bb + 161.8*tb_m + 371.2) if umur <= 10 else (8.365*bb + 465.0*tb_m + 200.0)
-            r_t = r"\text{AMB (P)} = " + ("16.25 Wt + 1023.2 Ht - 413.5" if umur <= 3 else "16.97 Wt + 161.8 Ht + 371.2" if umur <= 10 else "8.365 Wt + 465 Ht + 200")
-            r_a = f"\\text{{AMB (P)}} = " + (f"(16.25 \\times {bb}) + (1023.2 \\times {tb_m}) - 413.5" if umur <= 3 else f"(16.97 \\times {bb}) + (161.8 \\times {tb_m}) + 371.2" if umur <= 10 else f"(8.365 \\times {bb}) + (465.0 \\times {tb_m}) + 200.0")
-
-        bagi = 1 if "1 Hari" in waktu else 3
-        k = (bmr * pal) / bagi
+            c_w, c_h, c_c = (16.25, 1023.2, -413.5) if umur <= 3 else (16.969, 161.8, 371.2) if umur <= 10 else (8.365, 465.0, 200.0)
+            lbl = "P"
+            
+        bmr = (c_w * bb) + (c_h * tb_m) + c_c
+        sign = "+" if c_c >= 0 else "-"
         
-        # PERBAIKAN BATAS BAWAH SESUAI JURNAL: 10% Protein, 20% Lemak, 45% Karbo
-        st.session_state['gizi'] = {'kalori': k, 'protein': (k * 0.1) / 4, 'lemak': (k * 0.2) / 9, 'karbo': (k * 0.45) / 4, 'bmr': bmr, 'pal': pal, 'bagi': bagi, 'r_t': r_t, 'r_a': r_a}
-        st.success("Target Gizi Minimum diperbarui! Lanjut ke Tab 2.")
+        # 3. Kebutuhan Makro (Batas Bawah Jurnal: 10% Pro, 20% Lemak, 45% Karbo)
+        pembagi = 1 if "1 Hari" in target_waktu else 3
+        porsi_kalori = (bmr * multiplier) / pembagi
+        
+        st.session_state.update({
+            'bmr_val': round(bmr, 1), 'aktivitas_val': multiplier, 'pembagi_val': pembagi,
+            'target_kalori': round(porsi_kalori, 1), 
+            'target_protein': round((porsi_kalori * 0.10) / 4, 1),
+            'target_lemak': round((porsi_kalori * 0.20) / 9, 1), 
+            'target_karbo': round((porsi_kalori * 0.45) / 4, 1),
+            'rumus_amb_teks': fr"\text{{AMB ({lbl})}} = {c_w} Wt + {c_h} Ht {sign} {abs(c_c)}", 
+            'rumus_amb_angka': fr"\text{{AMB ({lbl})}} = ({c_w} \times {bb}) + ({c_h} \times {tb_m}) {sign} {abs(c_c)}"
+        })
+        st.success(f"Target Gizi diperbarui ({target_waktu})! Lanjut ke Tab 2.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 2: EKSEKUSI OPTIMASI ---
+# --- HALAMAN 2: EKSEKUSI OPTIMASI ---
 with tab_aljabar:
-    gz = st.session_state['gizi']
-    st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;"><h4>🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):</h4>', unsafe_allow_html=True)
+    st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
+    st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks):")
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Kalori", f"{gz['kalori']:.1f} Kkal")
-    c2.metric("Protein (10%)", f"{gz['protein']:.1f} Gram")
-    c3.metric("Lemak (20%)", f"{gz['lemak']:.1f} Gram")
-    c4.metric("Karbo (45%)", f"{gz['karbo']:.1f} Gram")
+    c1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
+    c2.metric("Protein (Min 10%)", f"{st.session_state['target_protein']} Gram")
+    c3.metric("Lemak (Min 20%)", f"{st.session_state['target_lemak']} Gram")
+    c4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="white-box"><h3>🛒 Database Bahan Makanan (Pilih Lauk)</h3>', unsafe_allow_html=True)
-    df = st.session_state['db_bahan'] = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### 🛒 Database Bahan Makanan (Pilih Lauk)")
+    df_interaktif = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
+    st.session_state['db_bahan'] = df_interaktif
     st.markdown('</div>', unsafe_allow_html=True)
     
     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
-        d_pilih = df[df["Gunakan"]].copy()
-        if len(d_pilih) < 2: st.error("⚠️ Centang minimal 2 bahan makanan.")
+        df_dipilih = df_interaktif[df_interaktif["Gunakan"] == True].copy()
+        
+        if len(df_dipilih) < 2: st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi.")
         else:
-            H = pd.to_numeric(d_pilih["Harga (Rp)"], errors='coerce').fillna(0).values
-            Nut = d_pilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric).fillna(0).values
-            Bounds = [(0, p/100.0) for p in pd.to_numeric(d_pilih["Porsi (g)"], errors='coerce').fillna(1000).values]
+            harga = pd.to_numeric(df_dipilih["Harga (Rp)"], errors='coerce').fillna(0).values
+            gizi = df_dipilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0)
+            porsi = [(0, p/100.0) for p in pd.to_numeric(df_dipilih["Porsi (g)"], errors='coerce').fillna(1000).values]
+            b_ub = -np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']])
             
-            # Simpleks mencari Minimum, batas >= diubah ke <= dengan dikali -1
-            res = linprog(H, A_ub=-Nut.T, b_ub=-np.array([gz['kalori'], gz['protein'], gz['lemak'], gz['karbo']]), bounds=Bounds, method='highs')
-            
-            if res.success:
-                st.markdown(f'<div class="result-card"><p>Total Biaya Optimal</p><h2>Rp {res.fun:,.0f}</h2></div>', unsafe_allow_html=True)
-                st.markdown('<div class="white-box"><h3>⚖️ Rekomendasi Takaran</h3>', unsafe_allow_html=True)
-                st.table(pd.DataFrame({"Bahan Makanan": d_pilih["Bahan Makanan"].values, "Takaran": [f"{g*100:,.0f} Gram" for g in res.x], "Biaya": [f"Rp {g*h:,.0f}" for g, h in zip(res.x, H)]})[res.x > 0.01].reset_index(drop=True))
-                st.markdown('</div>', unsafe_allow_html=True)
-            else: st.error("🚨 SPL Infeasible: Matriks gagal dipenuhi.")
+            try:
+                hasil = linprog(harga, A_ub=-gizi.values.T, b_ub=b_ub, bounds=porsi, method='highs')
+                if hasil.success:
+                    st.markdown(f'<div class="result-card"><p>Total Biaya Paling Minimum (Titik Optimal)</p><h2>Rp {hasil.fun:,.0f}</h2><p>Solusi Makanan Termurah Sesuai Target Waktu</p></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="white-box">### ⚖️ Vektor Rekomendasi Takaran', unsafe_allow_html=True)
+                    df_hasil = pd.DataFrame({"Bahan Makanan": df_dipilih["Bahan Makanan"].values, "Takaran Disarankan": [f"{g*100:,.0f} Gram" for g in hasil.x], "Biaya Realisasi": [f"Rp {g*h:,.0f}" for g, h in zip(hasil.x, harga)]})
+                    st.table(df_hasil[hasil.x > 0.01].reset_index(drop=True))
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.error("🚨 SPL Infeasible: Matriks kendala gagal dipenuhi. Coba variasikan porsi makanan.")
+            except Exception as e:
+                st.error(f"Error komputasi: {e}")
 
-# --- TAB 3: LANGKAH MANUAL ---
+# --- HALAMAN 3: LANGKAH MANUAL (SANGAT DETAIL) ---
 with tab_manual:
-    gz = st.session_state['gizi']
-    d_aktif = st.session_state['db_bahan'][st.session_state['db_bahan']["Gunakan"]].reset_index(drop=True)
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### ✍️ Simulasi Pemodelan: Dari Biometrik ke Matriks")
+    st.write("Di balik layar, sistem ini bekerja melalui dua tahap besar: (1) Penentuan Kebutuhan Gizi Makronutrien dan (2) Optimasi Matriks Simpleks Dua Fase.")
     
-    st.markdown('<div class="white-box"><h3>✍️ Simulasi Pemodelan Aljabar</h3><hr><h4>TAHAP 1: Konstanta Gizi (Asal Vektor B)</h4>', unsafe_allow_html=True)
-    st.markdown("**1. Angka Metabolisme Basal (AMB)**")
-    st.latex(gz['r_t']); st.latex(f"{gz['r_a']} = {gz['bmr']:.1f} \\text{{ Kkal}}")
-    st.markdown("**2. Total Energy Expenditure (TEE) & Target Kalori (K)**")
-    st.latex(f"K = \\frac{{TEE}}{{{gz['bagi']}}} = \\frac{{{gz['bmr']:.1f} \\times {gz['pal']}}}{{{gz['bagi']}}} = {gz['kalori']:.1f} \\text{{ Kkal}}")
-    st.markdown("**3. Distribusi Batas Bawah (Minimum) Sesuai Jurnal**")
-    st.latex(r"\text{Protein} = \frac{10\% \times K}{4} \Rightarrow \frac{0.1 \times " + f"{gz['kalori']:.1f}" + r"}{4} = " + f"{gz['protein']:.1f} \\text{{ g}}")
-    st.latex(r"\text{Lemak} = \frac{20\% \times K}{9} \Rightarrow \frac{0.2 \times " + f"{gz['kalori']:.1f}" + r"}{9} = " + f"{gz['lemak']:.1f} \\text{{ g}}")
-    st.latex(r"\text{Karbo} = \frac{45\% \times K}{4} \Rightarrow \frac{0.45 \times " + f"{gz['kalori']:.1f}" + r"}{4} = " + f"{gz['karbo']:.1f} \\text{{ g}}")
+    st.write("---")
+    st.write("#### TAHAP 1: Perhitungan Konstanta Gizi (Asal Mula Vektor B)")
+    st.markdown("**1. Angka Metabolisme Basal (AMB) - Persamaan Schofield**")
+    st.latex(st.session_state['rumus_amb_teks'])
+    st.latex(st.session_state['rumus_amb_angka'] + f" = {st.session_state['bmr_val']} \\text{{ Kkal}}")
     
-    if len(d_aktif) >= 2:
-        st.write("<hr><h4>TAHAP 2 & 3: Model Matematika & Bentuk Kanonik</h4>", unsafe_allow_html=True)
-        st.latex(r"\text{Min } Z = " + " + ".join([f"{int(r['Harga (Rp)'])}x_{i+1}" for i, r in d_aktif.iterrows()]))
-        
-        # Compact equation rendering
+    st.markdown("**2. Total Energy Expenditure (TEE) & Target Kalori Akhir (K)**")
+    st.latex(f"TEE = {st.session_state['bmr_val']} \\times {st.session_state['aktivitas_val']} = {round(st.session_state['bmr_val'] * st.session_state['aktivitas_val'], 1)} \\text{{ Kkal}}")
+    st.latex(r"K = \frac{TEE}{" + str(st.session_state.get('pembagi_val', 3)) + r"} = " + str(st.session_state['target_kalori']) + r" \text{ Kkal}")
+    
+    st.markdown("**3. Distribusi Batas Bawah Gizi Minimum (Jurnal)**")
+    st.latex(r"\text{Protein (10\%)} = \frac{10\% \times K}{4} \Rightarrow " + str(st.session_state['target_protein']) + r" \text{ g}")
+    st.latex(r"\text{Lemak (20\%)} = \frac{20\% \times K}{9} \Rightarrow " + str(st.session_state['target_lemak']) + r" \text{ g}")
+    st.latex(r"\text{Karbo (45\%)} = \frac{45\% \times K}{4} \Rightarrow " + str(st.session_state['target_karbo']) + r" \text{ g}")
+    
+    df_aktif = st.session_state['db_bahan'][st.session_state['db_bahan']["Gunakan"] == True].reset_index(drop=True)
+    if len(df_aktif) >= 2:
         nut_cols = ["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]
-        b_vals = [gz['kalori'], gz['protein'], gz['lemak'], gz['karbo']]
-        for j, (col, b) in enumerate(zip(nut_cols, b_vals)):
-            st.latex(" + ".join([f"{r[col]}x_{i+1}" for i, r in d_aktif.iterrows()]) + f" - S_{j+1} + R_{j+1} = {b:.1f}")
-
-        st.write("<hr><h4>TAHAP 4: Tableau Initial Fase 1 (Setelah Substitusi R)</h4>", unsafe_allow_html=True)
-        st.latex(r"\text{Minimasi } W = R_1 + R_2 + R_3 + R_4")
+        b_vals = [st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']]
         
-        # Simplified Matrix Building
-        cols = ["Basis"] + [f"x{i+1}" for i in range(len(d_aktif))] + ["S1","S2","S3","S4", "R1","R2","R3","R4", "NK (B)"]
-        mat = []
-        for i, col in enumerate(nut_cols):
-            mat.append([f"R{i+1}"] + list(d_aktif[col]) + [0]*i + [-1] + [0]*(3-i) + [0]*i + [1] + [0]*(3-i) + [b_vals[i]])
+        st.write("---")
+        st.write("#### TAHAP 2: Model Matematika (Fungsi Asli)")
+        st.latex(r"\text{Fungsi Tujuan: } Z = " + " + ".join([f"{int(r['Harga (Rp)'])}x_{i+1}" for i, r in df_aktif.iterrows()]))
+        for i, (col, b_val) in enumerate(zip(nut_cols, b_vals)):
+            st.latex(f"\\text{{Kendala {i+1}: }} " + " + ".join([f"{r[col]}x_{j+1}" for j, r in df_aktif.iterrows()]) + f" \ge {b_val}")
         
-        # Substitusi W (Sum of X coefficients)
-        mat.append(["W (Fase 1)"] + [d_aktif.loc[i, nut_cols].sum() for i in range(len(d_aktif))] + [-1,-1,-1,-1, 0,0,0,0, sum(b_vals)])
-        st.dataframe(pd.DataFrame(mat, columns=cols).style.format(precision=1), use_container_width=True, hide_index=True)
+        st.write("---")
+        st.write("#### TAHAP 3: Bentuk Kanonik (Surplus & Artificial Variables)")
+        for i, (col, b_val) in enumerate(zip(nut_cols, b_vals)):
+            st.latex(" + ".join([f"{r[col]}x_{j+1}" for j, r in df_aktif.iterrows()]) + f" - S_{i+1} + R_{i+1} = {b_val}")
+        
+        st.write("---")
+        st.write("#### TAHAP 4: FASE 1 (Mencari Solusi Awal Fisibel)")
+        st.latex(r"\text{Fungsi Tujuan Fase 1: Minimasi } W = R_1 + R_2 + R_3 + R_4")
+        
+        # Pembangunan Matriks Dinamis (Disederhanakan menggunakan Loop)
+        kolom_lengkap = ["Basis"] + [f"x{i+1}" for i in range(len(df_aktif))] + ["S1", "S2", "S3", "S4", "R1", "R2", "R3", "R4", "NK (B)"]
+        matriks = []
+        for i, (col, b_val) in enumerate(zip(nut_cols, b_vals)):
+            S_cols, R_cols = [0]*4, [0]*4
+            S_cols[i], R_cols[i] = -1, 1
+            matriks.append([f"R{i+1}"] + list(df_aktif[col]) + S_cols + R_cols + [b_val])
+            
+        sum_x = df_aktif[nut_cols].sum(axis=1).tolist()
+        matriks.append(["W (Fase 1)"] + sum_x + [-1,-1,-1,-1, 0,0,0,0, sum(b_vals)])
+        
+        st.dataframe(pd.DataFrame(matriks, columns=kolom_lengkap).style.format(precision=1), use_container_width=True, hide_index=True)
+        st.caption("📌 *Ini adalah Tableau Initial Fase 1 yang sudah ter-substitusi. Operasi Baris Elementer (OBE) akan mereduksi matriks ini hingga nilai pada baris W mencapai 0.*")
+        st.write("---")
+        st.write("#### TAHAP 5: FASE 2 (Optimasi Biaya Termurah)")
+        st.write("Setelah kolom $R$ dibuang, algoritma mengembalikan fungsi biaya asli ($Z$) ke dalam matriks untuk mencari titik temu harga termurah (Hasil akhir tampil di Tab 2).")
+        
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 4: DOKUMENTASI ---
+# --- HALAMAN 4: DOKUMENTASI (RUMUS) ---
 with tab_docs:
     st.markdown('<div class="white-box"><h3>📖 Integrasi Matriks Aljabar</h3>', unsafe_allow_html=True)
-    st.latex(r"\text{Fungsi Minimum: } Z = \mathbf{C}^T \mathbf{X} \quad | \quad \text{Kendala: } \mathbf{A}\mathbf{X} \ge \mathbf{B}")
-    st.markdown("- **$C$**: Vektor harga, **$X$**: Vektor porsi, **$A$**: Matriks gizi, **$B$**: Vektor target gizi.")
+    st.latex(r"\text{Fungsi Minimum: } Z = \mathbf{C}^T \mathbf{X}")
+    st.latex(r"\text{Batasan Mutlak (Matriks): } \mathbf{A}\mathbf{X} \ge \mathbf{B}")
+    st.markdown("- $C$ : Vektor harga makanan.<br>- $X$ : Vektor porsi makanan.<br>- $A$ : Matriks kandungan gizi.<br>- $B$ : Vektor target minimal.", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)

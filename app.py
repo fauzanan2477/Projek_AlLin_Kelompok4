@@ -158,18 +158,18 @@ with tab_aljabar:
 
 
      # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
-     st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
-     st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+    st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+    st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
      
      # Wadah penampung data dinamis dari user
-     list_gunakan = []
-     list_batas_maksimal = []
+    list_gunakan = []
+    list_batas_maksimal = []
      
-     database_aktif = st.session_state['database_bahan']
-     total_bahan = len(database_aktif)
+    database_aktif = st.session_state['database_bahan']
+    total_bahan = len(database_aktif)
      
      # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
-     for i in range(0, total_bahan, 3):
+    for i in range(0, total_bahan, 3):
          # Membuat 3 kolom horizontal berdampingan di satu baris
          kolom_card = st.columns(3)
          
@@ -222,8 +222,8 @@ with tab_aljabar:
                      st.markdown('</div>', unsafe_allow_html=True)
     
      # Sinkronisasi akhir data checkbox dan stepper ke database utama
-     st.session_state['database_bahan']['Gunakan'] = list_gunakan
-     st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+    st.session_state['database_bahan']['Gunakan'] = list_gunakan
+    st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
 
 
     

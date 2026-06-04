@@ -163,9 +163,7 @@ with tab_aljabar:
  # Wadah penampung data dinamis dari user
     list_gunakan = []
     list_batas_maksimal = []
- 
-     # Melakukan looping membaca database baris demi baris
-     for index, row in st.session_state['database_bahan'].iterrows():
+    for index, row in st.session_state['database_bahan'].iterrows():
          
          # Membuat kotak pembatas melengkung per lauk (Menggunakan kelas white-box kamu)
          st.markdown('<div class="white-box" style="padding: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)

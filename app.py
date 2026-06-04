@@ -190,9 +190,18 @@ with tab_aljabar:
          with col_popup:
              st.write("<br>", unsafe_allow_html=True) # Menyeimbangkan posisi tombol ke tengah
              # Fitur utama: Menggunakan Popover melayang untuk tab history rincian
-             with st.popover("📋 Detail Lauk", use_container_width=True):
-                 st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
-                 
+             with st.popover(" Sesuaikan Gizi", use_container_width=True):
+                 st.markdown(f"#### 🧪 Edit Koefisien Gizi {row['Bahan Makanan']}")
+                 edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{index}")
+                 edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{index}")
+                 edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{index}")
+                 edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{index}")
+                 edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{index}")
+                 st.session_state['database_bahan'].at[index, "Harga (Rp)"] = edit_harga
+                 st.session_state['database_bahan'].at[index, "Kalori (Kkal)"] = edit_kalori
+                 st.session_state['database_bahan'].at[index, "Protein (g)"] = edit_protein
+                 st.session_state['database_bahan'].at[index, "Lemak (g)"] = edit_lemak
+                 st.session_state['database_bahan'].at[index, "Karbohidrat (g)"] = edit_karbo
                  # Menampilkan rincian riwayat data gizi lauk tersebut ke dalam pop-up
                  df_mini = pd.DataFrame({
                      "Komponen": ["Harga Lauk", "Energi", "Protein", "Lemak", "Karbohidrat"],

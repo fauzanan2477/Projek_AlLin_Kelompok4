@@ -161,54 +161,54 @@ with tab_aljabar:
     st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
  
  # Wadah penampung data dinamis dari user
-     list_gunakan = []
-     list_batas_maksimal = []
+    list_gunakan = []
+    list_batas_maksimal = []
  
- # Melakukan looping membaca database baris demi baris
- for index, row in st.session_state['database_bahan'].iterrows():
-     
-     # Membuat kotak pembatas melengkung per lauk (Menggunakan kelas white-box kamu)
-     st.markdown('<div class="white-box" style="padding: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
-     
-     # Membagi baris menjadi 3 kolom horizontal (Centang, Stepper Porsi, Pop-up)
-     col_centang, col_porsi, col_popup = st.columns([1, 4, 2])
-     
-     with col_centang:
-         status_aktif = st.checkbox("Gunakan", value=row["Gunakan"], key=f"chk_{index}")
-         list_gunakan.append(status_aktif)
+     # Melakukan looping membaca database baris demi baris
+     for index, row in st.session_state['database_bahan'].iterrows():
          
-     with col_porsi:
-         # Mengganti tabel input manual dengan tombol + - angka bawaan Streamlit
-         porsi_maks = st.number_input(
-             f"**{row['Bahan Makanan']}** — Batas Maksimal (Gram):",
-             min_value=0.0,
-             max_value=1000.0,
-             value=float(row["Batas Maksimal (g)"]),
-             step=50.0,
-             key=f"num_{index}"
-         )
-         list_batas_maksimal.append(porsi_maks)
+         # Membuat kotak pembatas melengkung per lauk (Menggunakan kelas white-box kamu)
+         st.markdown('<div class="white-box" style="padding: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
          
-     with col_popup:
-         st.write("<br>", unsafe_allow_html=True) # Menyeimbangkan posisi tombol ke tengah
-         # Fitur utama: Menggunakan Popover melayang untuk tab history rincian
-         with st.popover("📋 Detail Lauk", use_container_width=True):
-             st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
+         # Membagi baris menjadi 3 kolom horizontal (Centang, Stepper Porsi, Pop-up)
+         col_centang, col_porsi, col_popup = st.columns([1, 4, 2])
+         
+         with col_centang:
+             status_aktif = st.checkbox("Gunakan", value=row["Gunakan"], key=f"chk_{index}")
+             list_gunakan.append(status_aktif)
              
-             # Menampilkan rincian riwayat data gizi lauk tersebut ke dalam pop-up
-             df_mini = pd.DataFrame({
-                 "Komponen": ["Harga Lauk", "Energi", "Protein", "Lemak", "Karbohidrat"],
-                 "Nilai Semula": [
-                     f"Rp {row['Harga (Rp)']}", 
-                     f"{row['Kalori (Kkal)']} Kkal", 
-                     f"{row['Protein (g)']} g", 
-                     f"{row['Lemak (g)']} g", 
-                     f"{row['Karbohidrat (g)']} g"
-                 ]
-             })
-             st.dataframe(df_mini, use_container_width=True, hide_index=True)
+         with col_porsi:
+             # Mengganti tabel input manual dengan tombol + - angka bawaan Streamlit
+             porsi_maks = st.number_input(
+                 f"**{row['Bahan Makanan']}** — Batas Maksimal (Gram):",
+                 min_value=0.0,
+                 max_value=1000.0,
+                 value=float(row["Batas Maksimal (g)"]),
+                 step=50.0,
+                 key=f"num_{index}"
+             )
+             list_batas_maksimal.append(porsi_maks)
              
-     st.markdown('</div>', unsafe_allow_html=True)
+         with col_popup:
+             st.write("<br>", unsafe_allow_html=True) # Menyeimbangkan posisi tombol ke tengah
+             # Fitur utama: Menggunakan Popover melayang untuk tab history rincian
+             with st.popover("📋 Detail Lauk", use_container_width=True):
+                 st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
+                 
+                 # Menampilkan rincian riwayat data gizi lauk tersebut ke dalam pop-up
+                 df_mini = pd.DataFrame({
+                     "Komponen": ["Harga Lauk", "Energi", "Protein", "Lemak", "Karbohidrat"],
+                     "Nilai Semula": [
+                         f"Rp {row['Harga (Rp)']}", 
+                         f"{row['Kalori (Kkal)']} Kkal", 
+                         f"{row['Protein (g)']} g", 
+                         f"{row['Lemak (g)']} g", 
+                         f"{row['Karbohidrat (g)']} g"
+                     ]
+                 })
+                 st.dataframe(df_mini, use_container_width=True, hide_index=True)
+                 
+         st.markdown('</div>', unsafe_allow_html=True)
 
  # Memasukkan kembali hasil utak-atik tombol + - user ke matriks database utama
  st.session_state['database_bahan']['Gunakan'] = list_gunakan
@@ -216,7 +216,7 @@ with tab_aljabar:
 
     
     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
-        bahan_terpilih = tabel_interaktif[tabel_interaktif["Gunakan"] == True].copy()
+        bahan_terpilih = st.session_state['database_bahan'][st.session_state['database_bahan']["Gunakan"] == True].copy()
         
         if len(bahan_terpilih) < 2:
             st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")

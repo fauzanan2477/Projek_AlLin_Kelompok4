@@ -185,23 +185,23 @@ with tab_aljabar:
                      with st.container(border=True):
                      
                      # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
-                     c_nama, c_aktif = st.columns([3, 1])
-                     with c_nama:
-                         st.markdown(f"##### **{row['Bahan Makanan']}**")
-                     with c_aktif:
-                         status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
-                         list_gunakan.append(status_aktif)
-                     
-                     # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
-                     porsi_maks = st.number_input(
-                         "Batas Maksimal (Gram):",
-                         min_value=0.0,
-                         max_value=1000.0,
-                         value=float(row["Batas Maksimal (g)"]),
-                         step=50.0,
-                         key=f"num_{idx_bahan}"
-                     )
-                     list_batas_maksimal.append(porsi_maks)
+                         c_nama, c_aktif = st.columns([3, 1])
+                         with c_nama:
+                             st.markdown(f"##### **{row['Bahan Makanan']}**")
+                         with c_aktif:
+                             status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
+                             list_gunakan.append(status_aktif)
+                         
+                         # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
+                         porsi_maks = st.number_input(
+                             "Batas Maksimal (Gram):",
+                             min_value=0.0,
+                             max_value=1000.0,
+                             value=float(row["Batas Maksimal (g)"]),
+                             step=50.0,
+                             key=f"num_{idx_bahan}"
+                         )
+                         list_batas_maksimal.append(porsi_maks)
                      
                      # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
                      with st.popover("📋 Detail & Edit Gizi", use_container_width=True):

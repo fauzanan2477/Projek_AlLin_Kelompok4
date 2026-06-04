@@ -8,24 +8,13 @@ from scipy.optimize import linprog
 # ==========================================
 st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
 
-st.markdown("""
-    <style>
-    .stApp { background-color: #f4f6f9; color: #111111; }
-    .block-container { padding-top: 2rem; max-width: 1100px; }
-    .white-box { background-color: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; color: #333333;}
-    .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 30px; border-bottom: 2px solid #dcdde1; background-color: #ffffff; padding: 10px; border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.15rem; color: #555555; background-color: transparent; border: none; }
-    .stTabs [aria-selected="true"] { color: #1e3799; border-bottom: 4px solid #1e3799; }
-    h1, h2, h3, h4, p { color: #111111 !important; }
-    .white-box li { color: #333333; } 
-    .hero-title { font-size: 3.2rem; font-weight: 900; color: #000000 !important; line-height: 1.2; margin-bottom: 15px; text-align: center; }
-    .hero-title span { color: #1e3799 !important; }
-    .hero-subtitle { font-size: 1.2rem; color: #444444 !important; font-weight: 500; text-align: center; margin-bottom: 30px;}
-    .result-card { background: linear-gradient(135deg, #1e3799, #0984e3); color: white !important; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);}
-    .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
-    .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
-    </style>
-""", unsafe_allow_html=True)
+from styles import terapkan_css, render_hero_banner
+
+
+terapkan_css()
+
+
+render_hero_banner()
 
 # ==========================================
 # 2. HERO SECTION

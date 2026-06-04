@@ -158,6 +158,42 @@ with tab_aljabar:
 
    # ✅ TIMPA DAN GANTI DENGAN KODE BARU INI DI SANA:
     st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+        
+    with st.popover("➕ Tambah Menu Lauk Baru", use_container_width=True):
+        st.markdown("#### 🥗 Masukkan Data Lauk Baru")
+        
+        # Form input teks dan angka
+        input_nama = st.text_input("Nama Bahan Makanan:", placeholder="Misal: Daging Sapi")
+        input_harga = st.number_input("Harga per 100g (Rp):", min_value=0, value=2000, step=500)
+        
+        # Kolom horizontal gizi lauk baru
+        k_g1, k_g2 = st.columns(2)
+        with k_g1:
+            input_kalori = st.number_input("Kalori (Kkal):", min_value=0.0, value=150.0)
+            input_protein = st.number_input("Protein (g):", min_value=0.0, value=10.0)
+        with k_g2:
+            input_lemak = st.number_input("Lemak (g):", min_value=0.0, value=5.0)
+            input_karbo = st.number_input("Karbohidrat (g):", min_value=0.0, value=15.0)
+            
+        input_batas = st.number_input("Batas Maksimal Porsi (Gram):", min_value=0.0, value=200.0, step=50.0)
+        if st.button("💾 Simpan ke Database Matriks", use_container_width=True):
+            if input_nama:
+                # Membuat baris data baru sesuai struktur database kelompokmu
+                baris_baru = pd.DataFrame([{
+                    "Gunakan": True,
+                    "Bahan Makanan": input_nama,
+                    "Harga (Rp)": int(input_harga),
+                    "Kalori (Kkal)": float(input_kalori),
+                    "Protein (g)": float(input_protein),
+                    "Lemak (g)": float(input_lemak),
+                    "Karbohidrat (g)": float(input_karbo),
+                    "Batas Maksimal (g)": float(input_batas)
+                }])
+                st.session_state['database_bahan'] = pd.concat([st.session_state['database_bahan'], baris_baru], ignore_index=True)
+                st.success(f"✅ Lauk '{input_nama}' berhasil ditambahkan!")
+                st.rerun() # Refresh halaman biar kartunya langsung muncul di bawah
+            else:
+                st.error("❌ Nama bahan makanan tidak boleh kosong!")
     st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
  
  # Wadah penampung data dinamis dari user

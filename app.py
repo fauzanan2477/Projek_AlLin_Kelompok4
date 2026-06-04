@@ -182,7 +182,7 @@ with tab_aljabar:
                  # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
                  with kolom_card[j]:
                      # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
-                     st.markdown('<div class="white-box" style="padding: 20px; margin-bottom: 15px; border-radius: 15px; height: 100%;">', unsafe_allow_html=True)
+                     with st.container(border=True):
                      
                      # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
                      c_nama, c_aktif = st.columns([3, 1])
@@ -219,7 +219,7 @@ with tab_aljabar:
                          st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
                          st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
                          
-                     st.markdown('</div>', unsafe_allow_html=True)
+                     
     
      # Sinkronisasi akhir data checkbox dan stepper ke database utama
     st.session_state['database_bahan']['Gunakan'] = list_gunakan

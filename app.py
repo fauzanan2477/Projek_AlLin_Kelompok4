@@ -156,104 +156,75 @@ with tab_aljabar:
     k4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
     st.markdown('</div>', unsafe_allow_html=True)
 
-   # ✅ TIMPA DAN GANTI DENGAN KODE BARU INI DI SANA:
-    st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
-        
-    with st.popover("➕ Tambah Menu Lauk Baru", use_container_width=True):
-        st.markdown("#### 🥗 Masukkan Data Lauk Baru")
-        
-        # Form input teks dan angka
-        input_nama = st.text_input("Nama Bahan Makanan:", placeholder="Misal: Daging Sapi")
-        input_harga = st.number_input("Harga per 100g (Rp):", min_value=0, value=2000, step=500)
-        
-        # Kolom horizontal gizi lauk baru
-        k_g1, k_g2 = st.columns(2)
-        with k_g1:
-            input_kalori = st.number_input("Kalori (Kkal):", min_value=0.0, value=150.0)
-            input_protein = st.number_input("Protein (g):", min_value=0.0, value=10.0)
-        with k_g2:
-            input_lemak = st.number_input("Lemak (g):", min_value=0.0, value=5.0)
-            input_karbo = st.number_input("Karbohidrat (g):", min_value=0.0, value=15.0)
-            
-        input_batas = st.number_input("Batas Maksimal Porsi (Gram):", min_value=0.0, value=200.0, step=50.0)
-        if st.button("💾 Simpan ke Database Matriks", use_container_width=True):
-            if input_nama:
-                # Membuat baris data baru sesuai struktur database kelompokmu
-                baris_baru = pd.DataFrame([{
-                    "Gunakan": True,
-                    "Bahan Makanan": input_nama,
-                    "Harga (Rp)": int(input_harga),
-                    "Kalori (Kkal)": float(input_kalori),
-                    "Protein (g)": float(input_protein),
-                    "Lemak (g)": float(input_lemak),
-                    "Karbohidrat (g)": float(input_karbo),
-                    "Batas Maksimal (g)": float(input_batas)
-                }])
-                st.session_state['database_bahan'] = pd.concat([st.session_state['database_bahan'], baris_baru], ignore_index=True)
-                st.success(f"✅ Lauk '{input_nama}' berhasil ditambahkan!")
-                st.rerun() # Refresh halaman biar kartunya langsung muncul di bawah
-            else:
-                st.error("❌ Nama bahan makanan tidak boleh kosong!")
-    st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
- 
- # Wadah penampung data dinamis dari user
-    list_gunakan = []
-    list_batas_maksimal = []
-    for index, row in st.session_state['database_bahan'].iterrows():
+
+     # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
+     st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+     st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+     
+     # Wadah penampung data dinamis dari user
+     list_gunakan = []
+     list_batas_maksimal = []
+     
+     database_aktif = st.session_state['database_bahan']
+     total_bahan = len(database_aktif)
+     
+     # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
+     for i in range(0, total_bahan, 3):
+         # Membuat 3 kolom horizontal berdampingan di satu baris
+         kolom_card = st.columns(3)
          
-         # Membuat kotak pembatas melengkung per lauk (Menggunakan kelas white-box kamu)
-         st.markdown('<div class="white-box" style="padding: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
-         
-         # Membagi baris menjadi 3 kolom horizontal (Centang, Stepper Porsi, Pop-up)
-         col_centang, col_porsi, col_popup = st.columns([1, 4, 2])
-         
-         with col_centang:
-             status_aktif = st.checkbox("Gunakan", value=row["Gunakan"], key=f"chk_{index}")
-             list_gunakan.append(status_aktif)
-             
-         with col_porsi:
-             # Mengganti tabel input manual dengan tombol + - angka bawaan Streamlit
-             porsi_maks = st.number_input(
-                 f"**{row['Bahan Makanan']}** — Batas Maksimal (Gram):",
-                 min_value=0.0,
-                 max_value=1000.0,
-                 value=float(row["Batas Maksimal (g)"]),
-                 step=50.0,
-                 key=f"num_{index}"
-             )
-             list_batas_maksimal.append(porsi_maks)
-             
-         with col_popup:
-             st.write("<br>", unsafe_allow_html=True) # Menyeimbangkan posisi tombol ke tengah
-             # Fitur utama: Menggunakan Popover melayang untuk tab history rincian
-             with st.popover(" Sesuaikan Gizi", use_container_width=True):
-                 st.markdown(f"#### 🧪 Edit Koefisien Gizi {row['Bahan Makanan']}")
-                 edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{index}")
-                 edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{index}")
-                 edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{index}")
-                 edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{index}")
-                 edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{index}")
-                 st.session_state['database_bahan'].at[index, "Harga (Rp)"] = edit_harga
-                 st.session_state['database_bahan'].at[index, "Kalori (Kkal)"] = edit_kalori
-                 st.session_state['database_bahan'].at[index, "Protein (g)"] = edit_protein
-                 st.session_state['database_bahan'].at[index, "Lemak (g)"] = edit_lemak
-                 st.session_state['database_bahan'].at[index, "Karbohidrat (g)"] = edit_karbo
-                 # Menampilkan rincian riwayat data gizi lauk tersebut ke dalam pop-up
-                 df_mini = pd.DataFrame({
-                     "Komponen": ["Harga Lauk", "Energi", "Protein", "Lemak", "Karbohidrat"],
-                     "Nilai Semula": [
-                         f"Rp {row['Harga (Rp)']}", 
-                         f"{row['Kalori (Kkal)']} Kkal", 
-                         f"{row['Protein (g)']} g", 
-                         f"{row['Lemak (g)']} g", 
-                         f"{row['Karbohidrat (g)']} g"
-                     ]
-                 })
-                 st.dataframe(df_mini, use_container_width=True, hide_index=True)
+         # Mengisi tiap-tiap kolom (Maksimal 3 card per baris)
+         for j in range(3):
+             idx_bahan = i + j
+             if idx_bahan < total_bahan:
+                 row = database_aktif.iloc[idx_bahan]
                  
-         st.markdown('</div>', unsafe_allow_html=True)
-    st.session_state['database_bahan']['Gunakan'] = list_gunakan
-    st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+                 # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
+                 with kolom_card[j]:
+                     # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
+                     st.markdown('<div class="white-box" style="padding: 20px; margin-bottom: 15px; border-radius: 15px; height: 100%;">', unsafe_allow_html=True)
+                     
+                     # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
+                     c_nama, c_aktif = st.columns([3, 1])
+                     with c_nama:
+                         st.markdown(f"##### **{row['Bahan Makanan']}**")
+                     with c_aktif:
+                         status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
+                         list_gunakan.append(status_aktif)
+                     
+                     # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
+                     porsi_maks = st.number_input(
+                         "Batas Maksimal (Gram):",
+                         min_value=0.0,
+                         max_value=1000.0,
+                         value=float(row["Batas Maksimal (g)"]),
+                         step=50.0,
+                         key=f"num_{idx_bahan}"
+                     )
+                     list_batas_maksimal.append(porsi_maks)
+                     
+                     # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
+                     with st.popover("📋 Detail & Edit Gizi", use_container_width=True):
+                         st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
+                         edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{idx_bahan}")
+                         edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{idx_bahan}")
+                         edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{idx_bahan}")
+                         edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{idx_bahan}")
+                         edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{idx_bahan}")
+                         
+                         # Menyuntikkan langsung perubahan ke database memori
+                         st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
+                         st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
+                         st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
+                         st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
+                         st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
+                         
+                     st.markdown('</div>', unsafe_allow_html=True)
+    
+     # Sinkronisasi akhir data checkbox dan stepper ke database utama
+     st.session_state['database_bahan']['Gunakan'] = list_gunakan
+     st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+
 
     
     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):

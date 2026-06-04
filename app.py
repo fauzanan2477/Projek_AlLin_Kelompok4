@@ -163,45 +163,75 @@ with tab_aljabar:
             except Exception as e:
                 st.error(f"Error komputasi: {e}")
 
-# --- HALAMAN 3: LANGKAH MANUAL (BARU) ---
+# --- HALAMAN 3: LANGKAH MANUAL (DINAMIS & REAL-TIME) ---
 with tab_manual:
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
-    st.write("### ✍️ Urutan Perhitungan Manual Metode Simpleks (Sesuai Jurnal)")
-    st.write("Bagaimana cara komputer atau manusia menemukan harga termurah di belakang layar? Berikut adalah langkah-langkah aljabarnya.")
+    st.write("### ✍️ Urutan Perhitungan Manual Metode Simpleks (Otomatis)")
+    st.write("Berikut adalah langkah-langkah pemodelan aljabar linear yang di-*generate* langsung berdasarkan data bahan makanan yang Anda centang di Tab 2.")
     
-    st.write("#### Langkah 1: Model Matematika (Sistem Persamaan Linier)")
-    st.write("Menetapkan fungsi minimum dan fungsi kendala berdasarkan makanan yang dipilih.")
-    st.latex(r"\text{Minimumkan: } Z = 1200x_1 + 2600x_2 + 1000x_3 + \dots")
-    st.latex(r"\text{Kendala 1 (Kalori): } 130x_1 + 155x_2 + 193x_3 \ge 600")
-    st.latex(r"\text{Kendala 2 (Protein): } 2.7x_1 + 13x_2 + 19x_3 \ge 25")
+    # Ambil data yang aktif (dicentang) dari Tab 2
+    df_aktif = st.session_state['db_bahan'][st.session_state['db_bahan']["Gunakan"] == True].reset_index(drop=True)
     
-    st.write("#### Langkah 2: Bentuk Kanonik (Penambahan Slack/Surplus Variables)")
-    st.write("Pertidaksamaan ($\ge$) tidak bisa dihitung dalam matriks. Maka ditambahkan variabel bayangan (S) untuk mengubahnya menjadi persamaan ($=$).")
-    st.latex(r"130x_1 + 155x_2 + 193x_3 - S_1 = 600")
-    st.latex(r"2.7x_1 + 13x_2 + 19x_3 - S_2 = 25")
-    
-    st.write("#### Langkah 3: Membangun Tabel Simpleks (Initial Tableau)")
-    st.write("Memasukkan semua koefisien variabel ($x$ dan $S$) ke dalam format matriks M x N.")
-    
-    # Menampilkan contoh tabel simpleks menggunakan dataframe agar rapi
-    df_tableau = pd.DataFrame({
-        "Basis": ["S1", "S2", "Z"],
-        "x1": ["130", "2.7", "-1200"],
-        "x2": ["155", "13", "-2600"],
-        "x3": ["193", "19", "-1000"],
-        "S1": ["-1", "0", "0"],
-        "S2": ["0", "-1", "0"],
-        "Nilai Kanan (B)": ["600", "25", "0"]
-    })
-    st.table(df_tableau)
-    
-    st.write("#### Langkah 4: Iterasi Matriks (Operasi Baris Elementer)")
-    st.write("1. **Menentukan Kolom Pivot:** Memilih kolom dengan nilai Z paling negatif.")
-    st.write("2. **Menentukan Baris Pivot:** Membagi Nilai Kanan (B) dengan Kolom Pivot untuk mencari indeks terkecil (Variabel yang Keluar).")
-    st.write("3. **Operasi Baris Elementer (OBE):** Mengubah elemen Pivot menjadi 1, dan elemen lain di kolom tersebut menjadi 0, persis seperti mencari Invers Matriks.")
-    
-    st.write("#### Langkah 5: Syarat Optimal")
-    st.success("Iterasi OBE dilakukan berulang-ulang hingga **tidak ada lagi nilai negatif** pada baris $Z$. Saat itu terjadi, nilai di kolom paling kanan (B) pada baris Z adalah harga mutlak termurahnya!")
+    if len(df_aktif) < 2:
+        st.warning("⚠️ Silakan centang minimal 2 bahan makanan di Tab 2 untuk melihat simulasi matriks manualnya.")
+    else:
+        # --- LANGKAH 1 ---
+        st.write("#### Langkah 1: Model Matematika (Sistem Persamaan Linier)")
+        st.write("Menetapkan fungsi minimum dan fungsi kendala berdasarkan makanan yang dipilih.")
+        
+        # Build Fungsi Tujuan dinamis
+        z_terms = [f"{int(row['Harga (Rp)'])}x_{i+1}" for i, row in df_aktif.iterrows()]
+        st.latex(r"\text{Minimumkan: } Z = " + " + ".join(z_terms))
+        
+        # Build Fungsi Kendala dinamis
+        k_terms = [f"{row['Kalori (Kkal)']}x_{i+1}" for i, row in df_aktif.iterrows()]
+        p_terms = [f"{row['Protein (g)']}x_{i+1}" for i, row in df_aktif.iterrows()]
+        l_terms = [f"{row['Lemak (g)']}x_{i+1}" for i, row in df_aktif.iterrows()]
+        
+        st.latex(r"\text{Kendala 1 (Kalori): } " + " + ".join(k_terms) + f" \ge {st.session_state['target_kalori']}")
+        st.latex(r"\text{Kendala 2 (Protein): } " + " + ".join(p_terms) + f" \ge {st.session_state['target_protein']}")
+        st.latex(r"\text{Kendala 3 (Lemak): } " + " + ".join(l_terms) + f" \ge {st.session_state['target_lemak']}")
+        
+        # --- LANGKAH 2 ---
+        st.write("#### Langkah 2: Bentuk Kanonik (Penambahan Surplus Variables)")
+        st.write("Pertidaksamaan ($\ge$) diubah menjadi persamaan ($=$) dengan mengurangkan variabel surplus ($S$) agar dapat diolah ke dalam matriks.")
+        st.latex(" + ".join(k_terms) + f" - S_1 = {st.session_state['target_kalori']}")
+        st.latex(" + ".join(p_terms) + f" - S_2 = {st.session_state['target_protein']}")
+        st.latex(" + ".join(l_terms) + f" - S_3 = {st.session_state['target_lemak']}")
+        
+        # --- LANGKAH 3 ---
+        st.write("#### Langkah 3: Membangun Tabel Simpleks (Initial Tableau Matriks)")
+        st.write("Menyusun seluruh koefisien persamaan di atas ke dalam bentuk matriks.")
+        
+        # Membuat header tabel (Kolom x1, x2, ..., S1, S2, S3, NK)
+        var_cols = [f"x{i+1}" for i in range(len(df_aktif))]
+        cols = ["Basis"] + var_cols + ["S1", "S2", "S3", "Nilai Kanan (NK)"]
+        
+        # Mengisi baris matriks secara dinamis
+        row_s1 = ["S1"] + list(df_aktif["Kalori (Kkal)"]) + [-1, 0, 0, st.session_state['target_kalori']]
+        row_s2 = ["S2"] + list(df_aktif["Protein (g)"]) + [0, -1, 0, st.session_state['target_protein']]
+        row_s3 = ["S3"] + list(df_aktif["Lemak (g)"]) + [0, 0, -1, st.session_state['target_lemak']]
+        # Baris fungsi Z (Nilai harga diubah menjadi negatif untuk iterasi minimum)
+        row_z = ["Z"] + [-int(x) for x in df_aktif["Harga (Rp)"]] + [0, 0, 0, 0]
+        
+        df_tableau = pd.DataFrame([row_s1, row_s2, row_s3, row_z], columns=cols)
+        
+        # Tampilkan matriks menggunakan DataFrame dengan presisi angka yang rapi
+        st.dataframe(df_tableau.style.format(precision=1), use_container_width=True, hide_index=True)
+        st.caption("*(Keterangan: Matriks di atas akan terus berubah menyesuaikan bahan dan harga yang Anda edit di Tab 2)*")
+        
+        # --- LANGKAH 4 & 5 ---
+        st.write("#### Langkah 4: Iterasi Matriks (Operasi Baris Elementer)")
+        st.markdown("""
+        Untuk menemukan titik optimal termurah, komputer melakukan tahapan berikut:
+        1. **Menentukan Kolom Pivot:** Memilih kolom dengan nilai paling negatif pada baris Z terbawah.
+        2. **Menentukan Baris Pivot:** Membagi Nilai Kanan (NK) dengan elemen pada Kolom Pivot (mencari rasio positif terkecil).
+        3. **Operasi Baris Elementer (OBE):** Menggunakan perkalian dan penjumlahan antar baris untuk mengubah elemen Pivot menjadi **1**, dan elemen lain di kolom tersebut menjadi **0**. Proses ini sama dengan mencari *Invers Matriks*.
+        """)
+        
+        st.write("#### Langkah 5: Kondisi Optimal (Hasil Akhir)")
+        st.success("Iterasi OBE tersebut dilakukan berulang-ulang oleh sistem hingga **tidak ada lagi nilai negatif** pada baris $Z$. Saat iterasi berhenti, nilai pada kolom 'Nilai Kanan (NK)' di baris Z adalah Harga Mutlak Termurah yang muncul di layar kalkulator utama!")
+        
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- HALAMAN 4: DOKUMENTASI (RUMUS) ---

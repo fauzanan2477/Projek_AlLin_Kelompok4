@@ -157,12 +157,12 @@ with tab_aljabar:
     st.markdown('</div>', unsafe_allow_html=True)
 
    # ✅ TIMPA DAN GANTI DENGAN KODE BARU INI DI SANA:
- st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
- st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+    st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+    st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
  
  # Wadah penampung data dinamis dari user
- list_gunakan = []
- list_batas_maksimal = []
+     list_gunakan = []
+     list_batas_maksimal = []
  
  # Melakukan looping membaca database baris demi baris
  for index, row in st.session_state['database_bahan'].iterrows():

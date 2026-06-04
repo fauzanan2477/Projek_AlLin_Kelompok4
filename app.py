@@ -207,10 +207,8 @@ with tab_aljabar:
                  st.dataframe(df_mini, use_container_width=True, hide_index=True)
                  
          st.markdown('</div>', unsafe_allow_html=True)
-
- # Memasukkan kembali hasil utak-atik tombol + - user ke matriks database utama
- st.session_state['database_bahan']['Gunakan'] = list_gunakan
- st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+        st.session_state['database_bahan']['Gunakan'] = list_gunakan
+        st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
 
     
     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):

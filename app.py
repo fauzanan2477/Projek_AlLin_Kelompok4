@@ -159,7 +159,7 @@ with tab_aljabar:
                     st.table(df_hasil[hasil.x > 0.01].reset_index(drop=True))
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.error("🚨 SPL Infeasible: Sistem tidak bisa memenuhi target gizi dengan lauk yang dipilih. Coba naikkan 'Batas Maks' makanan.")
+                    st.error("🚨 SPL Infeasible: Sistem tidak bisa memenuhi target gizi dengan lauk yang dipilih. Coba tambah 'Porsi' makanan.")
             except Exception as e:
                 st.error(f"Error komputasi: {e}")
 

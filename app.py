@@ -33,7 +33,6 @@ st.markdown("""
     .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
     .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
     </style>
-            
 """, unsafe_allow_html=True)
 
 # ==========================================
@@ -41,7 +40,7 @@ st.markdown("""
 # ==========================================
 st.markdown("""
 <div class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></div>
-<div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Matriks Simpleks)</div>
+<div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Simpleks Dua Fase)</div>
 """, unsafe_allow_html=True)
 
 # ==========================================
@@ -67,7 +66,7 @@ if 'target_kalori' not in st.session_state:
 tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
     "1. Kalkulator Gizi", 
     "2. Eksekusi Optimasi", 
-    "3. Langkah Manual (Jurnal)", 
+    "3. Langkah Manual (Dua Fase)", 
     "4. Dokumentasi Rumus"
 ])
 
@@ -75,36 +74,49 @@ tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
 with tab_gizi:
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")
-    st.write("Sistem menghitung target gizi anak (AKG) berdasarkan persamaan biometrik untuk digunakan sebagai batas matriks di halaman berikutnya.")
+    st.write("Sistem menghitung target gizi anak berdasarkan persamaan Harris-Benedict dan tingkat aktivitas fisik (Merujuk pada Jurnal Brawijaya).")
     
     col_bio1, col_bio2 = st.columns(2)
     with col_bio1:
         umur = st.number_input("Umur Anak (Tahun)", min_value=5, max_value=18, value=10)
         jk = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+        
+        aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", [
+            "Sangat Jarang (Pasif / Tidak olahraga)",
+            "Jarang (Olahraga ringan 1-3 hari/minggu)",
+            "Cukup (Olahraga sedang 3-5 hari/minggu)",
+            "Sering (Olahraga berat 6-7 hari/minggu)",
+            "Sangat Sering (Atlet / Fisik ekstra)"
+        ], index=2)
+        
     with col_bio2:
         bb = st.number_input("Berat Badan (kg)", min_value=15.0, value=30.0)
         tb = st.number_input("Tinggi Badan (cm)", min_value=100.0, value=135.0)
     
     if st.button("Hitung Target & Simpan", type="primary"):
-        # Harris Benedict Formula
+        if aktivitas == "Sangat Jarang (Pasif / Tidak olahraga)": multiplier = 1.2
+        elif aktivitas == "Jarang (Olahraga ringan 1-3 hari/minggu)": multiplier = 1.375
+        elif aktivitas == "Cukup (Olahraga sedang 3-5 hari/minggu)": multiplier = 1.55
+        elif aktivitas == "Sering (Olahraga berat 6-7 hari/minggu)": multiplier = 1.725
+        else: multiplier = 1.9
+
         if jk == "Laki-laki":
             bmr = 66.5 + (13.7 * bb) + (5 * tb) - (6.8 * umur)
         else:
             bmr = 655 + (9.6 * bb) + (1.8 * tb) - (4.7 * umur)
         
-        porsi_kalori = (bmr * 1.55) / 3 
+        porsi_kalori = (bmr * multiplier) / 3 
         porsi_protein = (porsi_kalori * 0.15) / 4 
         porsi_lemak = (porsi_kalori * 0.30) / 9 
         
         st.session_state['target_kalori'] = round(porsi_kalori, 1)
         st.session_state['target_protein'] = round(porsi_protein, 1)
         st.session_state['target_lemak'] = round(porsi_lemak, 1)
-        st.success("Target Vektor Gizi berhasil diperbarui! Lanjut ke Tab 2.")
+        st.success(f"Target Vektor Gizi diperbarui (Pengali Aktivitas: {multiplier})! Lanjut ke Tab 2.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- HALAMAN 2: EKSEKUSI OPTIMASI (ALJABAR) ---
+# --- HALAMAN 2: EKSEKUSI OPTIMASI ---
 with tab_aljabar:
-    # MENAMPILKAN TARGET GIZI SEBAGAI PENGINGAT
     st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
     st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks):")
     c1, c2, c3 = st.columns(3)
@@ -115,14 +127,11 @@ with tab_aljabar:
 
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 🛒 Database Bahan Makanan (Pilih Lauk)")
-    st.caption("Centang kolom **'Gunakan'** untuk mengikutkan makanan. Sesuaikan **'Porsi'** agar gizi anak anak terpenuhi.")
-    st.caption("**'Keterangan'**: Harga dan Kandungan Gizi(Karbohidrat, Protein, dan Lemak) ditulis dalam nilai **'per 100 gram'**.")
-
     df_interaktif = st.data_editor(st.session_state['db_bahan'], num_rows="dynamic", use_container_width=True, hide_index=True)
     st.session_state['db_bahan'] = df_interaktif
     st.markdown('</div>', unsafe_allow_html=True)
     
-    if st.button("🚀 Kalkulasi Biaya Termurah (Metode Simpleks)", type="primary", use_container_width=True):
+    if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
         df_dipilih = df_interaktif[df_interaktif["Gunakan"] == True].copy()
         
         if len(df_dipilih) < 2:
@@ -159,31 +168,28 @@ with tab_aljabar:
                     st.table(df_hasil[hasil.x > 0.01].reset_index(drop=True))
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.error("🚨 SPL Infeasible: Sistem tidak bisa memenuhi target gizi dengan lauk yang dipilih. Coba tambah 'Porsi' makanan.")
+                    st.error("🚨 SPL Infeasible: Sistem tidak bisa memenuhi target gizi dengan lauk yang dipilih.")
             except Exception as e:
                 st.error(f"Error komputasi: {e}")
 
-# --- HALAMAN 3: LANGKAH MANUAL (DINAMIS & REAL-TIME) ---
+# --- HALAMAN 3: LANGKAH MANUAL (DUA FASE) ---
 with tab_manual:
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
-    st.write("### ✍️ Urutan Perhitungan Manual Metode Simpleks (Otomatis)")
-    st.write("Berikut adalah langkah-langkah pemodelan aljabar linear yang di-*generate* langsung berdasarkan data bahan makanan yang Anda centang di Tab 2.")
+    st.write("### ✍️ Simulasi Aljabar: Metode Simpleks Dua Fase")
+    st.write("Berdasarkan jurnal *Optimasi Biaya Pemenuhan Asupan Gizi* (Universitas Brawijaya), fungsi kendala dengan tanda **Minimal ($\ge$)** harus diselesaikan menggunakan Metode Dua Fase agar porsi makanan yang direkomendasikan masuk akal dan tidak bernilai negatif.")
     
-    # Ambil data yang aktif (dicentang) dari Tab 2
     df_aktif = st.session_state['db_bahan'][st.session_state['db_bahan']["Gunakan"] == True].reset_index(drop=True)
     
     if len(df_aktif) < 2:
-        st.warning("⚠️ Silakan centang minimal 2 bahan makanan di Tab 2 untuk melihat simulasi matriks manualnya.")
+        st.warning("⚠️ Silakan centang minimal 2 bahan makanan di Tab 2 untuk melihat simulasi matriksnya.")
     else:
-        # --- LANGKAH 1 ---
-        st.write("#### Langkah 1: Model Matematika (Sistem Persamaan Linier)")
-        st.write("Menetapkan fungsi minimum dan fungsi kendala berdasarkan makanan yang dipilih.")
+        # TAHAP 1
+        st.write("#### Langkah 1: Model Matematika (Fungsi Asli)")
+        st.write("Sistem mendefinisikan Fungsi Tujuan (Z) untuk meminimalkan harga, dan Fungsi Kendala untuk memenuhi target gizi.")
         
-        # Build Fungsi Tujuan dinamis
         z_terms = [f"{int(row['Harga (Rp)'])}x_{i+1}" for i, row in df_aktif.iterrows()]
-        st.latex(r"\text{Minimumkan: } Z = " + " + ".join(z_terms))
+        st.latex(r"\text{Minimasi Harga: } Z = " + " + ".join(z_terms))
         
-        # Build Fungsi Kendala dinamis
         k_terms = [f"{row['Kalori (Kkal)']}x_{i+1}" for i, row in df_aktif.iterrows()]
         p_terms = [f"{row['Protein (g)']}x_{i+1}" for i, row in df_aktif.iterrows()]
         l_terms = [f"{row['Lemak (g)']}x_{i+1}" for i, row in df_aktif.iterrows()]
@@ -192,45 +198,38 @@ with tab_manual:
         st.latex(r"\text{Kendala 2 (Protein): } " + " + ".join(p_terms) + f" \ge {st.session_state['target_protein']}")
         st.latex(r"\text{Kendala 3 (Lemak): } " + " + ".join(l_terms) + f" \ge {st.session_state['target_lemak']}")
         
-        # --- LANGKAH 2 ---
-        st.write("#### Langkah 2: Bentuk Kanonik (Penambahan Surplus Variables)")
-        st.write("Pertidaksamaan ($\ge$) diubah menjadi persamaan ($=$) dengan mengurangkan variabel surplus ($S$) agar dapat diolah ke dalam matriks.")
-        st.latex(" + ".join(k_terms) + f" - S_1 = {st.session_state['target_kalori']}")
-        st.latex(" + ".join(p_terms) + f" - S_2 = {st.session_state['target_protein']}")
-        st.latex(" + ".join(l_terms) + f" - S_3 = {st.session_state['target_lemak']}")
+        # TAHAP 2
+        st.write("---")
+        st.write("#### Langkah 2: Bentuk Kanonik (Surplus & Artificial Variables)")
+        st.write("Karena tandanya $\ge$, kita harus mengurangkan variabel Surplus ($S$) agar menjadi persaman ($=$). Namun, ini memunculkan nilai identitas negatif. Maka, ditambahkan **Variabel Semu / Artificial ($R$)** sebagai pondasi awal matriks.")
+        st.latex(" + ".join(k_terms) + f" - S_1 + R_1 = {st.session_state['target_kalori']}")
+        st.latex(" + ".join(p_terms) + f" - S_2 + R_2 = {st.session_state['target_protein']}")
+        st.latex(" + ".join(l_terms) + f" - S_3 + R_3 = {st.session_state['target_lemak']}")
         
-        # --- LANGKAH 3 ---
-        st.write("#### Langkah 3: Membangun Tabel Simpleks (Initial Tableau Matriks)")
-        st.write("Menyusun seluruh koefisien persamaan di atas ke dalam bentuk matriks.")
+        # TAHAP 3
+        st.write("---")
+        st.write("#### Langkah 3: FASE 1 (Mencari Solusi Awal Fisibel)")
+        st.write("Pada Fase 1, perhitungan harga asli (Z) ditunda. Tujuan diubah menjadi **meminimalkan Variabel Buatan ($W = R_1 + R_2 + R_3$)**. Jika $W$ bisa mencapai angka $0$, artinya kombinasi makanan sudah memenuhi standar gizi (tidak ada porsi minus).")
+        st.latex(r"\text{Minimasi } W = R_1 + R_2 + R_3")
         
-        # Membuat header tabel (Kolom x1, x2, ..., S1, S2, S3, NK)
-        var_cols = [f"x{i+1}" for i in range(len(df_aktif))]
-        cols = ["Basis"] + var_cols + ["S1", "S2", "S3", "Nilai Kanan (NK)"]
+        # Matriks Dinamis Fase 1
+        kolom_x = [f"x{i+1}" for i in range(len(df_aktif))]
+        kolom_lengkap = ["Basis"] + kolom_x + ["S1", "S2", "S3", "R1", "R2", "R3", "Nilai Kanan (B)"]
         
-        # Mengisi baris matriks secara dinamis
-        row_s1 = ["S1"] + list(df_aktif["Kalori (Kkal)"]) + [-1, 0, 0, st.session_state['target_kalori']]
-        row_s2 = ["S2"] + list(df_aktif["Protein (g)"]) + [0, -1, 0, st.session_state['target_protein']]
-        row_s3 = ["S3"] + list(df_aktif["Lemak (g)"]) + [0, 0, -1, st.session_state['target_lemak']]
-        # Baris fungsi Z (Nilai harga diubah menjadi negatif untuk iterasi minimum)
-        row_z = ["Z"] + [-int(x) for x in df_aktif["Harga (Rp)"]] + [0, 0, 0, 0]
+        baris_r1 = ["R1"] + list(df_aktif["Kalori (Kkal)"]) + [-1, 0, 0, 1, 0, 0, st.session_state['target_kalori']]
+        baris_r2 = ["R2"] + list(df_aktif["Protein (g)"]) + [0, -1, 0, 0, 1, 0, st.session_state['target_protein']]
+        baris_r3 = ["R3"] + list(df_aktif["Lemak (g)"]) + [0, 0, -1, 0, 0, 1, st.session_state['target_lemak']]
+        baris_w  = ["W (Z-Fase 1)"] + [0]*len(df_aktif) + [0, 0, 0, -1, -1, -1, 0] # Representasi W
         
-        df_tableau = pd.DataFrame([row_s1, row_s2, row_s3, row_z], columns=cols)
+        df_matriks = pd.DataFrame([baris_r1, baris_r2, baris_r3, baris_w], columns=kolom_lengkap)
+        st.dataframe(df_matriks.style.format(precision=1), use_container_width=True, hide_index=True)
+        st.caption("📌 *Ini adalah Tableau Initial Fase 1. Operasi Baris Elementer (OBE) akan dilakukan hingga fungsi W di baris terbawah mencapai 0.*")
         
-        # Tampilkan matriks menggunakan DataFrame dengan presisi angka yang rapi
-        st.dataframe(df_tableau.style.format(precision=1), use_container_width=True, hide_index=True)
-        st.caption("*(Keterangan: Matriks di atas akan terus berubah menyesuaikan bahan dan harga yang Anda edit di Tab 2)*")
-        
-        # --- LANGKAH 4 & 5 ---
-        st.write("#### Langkah 4: Iterasi Matriks (Operasi Baris Elementer)")
-        st.markdown("""
-        Untuk menemukan titik optimal termurah, komputer melakukan tahapan berikut:
-        1. **Menentukan Kolom Pivot:** Memilih kolom dengan nilai paling negatif pada baris Z terbawah.
-        2. **Menentukan Baris Pivot:** Membagi Nilai Kanan (NK) dengan elemen pada Kolom Pivot (mencari rasio positif terkecil).
-        3. **Operasi Baris Elementer (OBE):** Menggunakan perkalian dan penjumlahan antar baris untuk mengubah elemen Pivot menjadi **1**, dan elemen lain di kolom tersebut menjadi **0**. Proses ini sama dengan mencari *Invers Matriks*.
-        """)
-        
-        st.write("#### Langkah 5: Kondisi Optimal (Hasil Akhir)")
-        st.success("Iterasi OBE tersebut dilakukan berulang-ulang oleh sistem hingga **tidak ada lagi nilai negatif** pada baris $Z$. Saat iterasi berhenti, nilai pada kolom 'Nilai Kanan (NK)' di baris Z adalah Harga Mutlak Termurah yang muncul di layar kalkulator utama!")
+        # TAHAP 4
+        st.write("---")
+        st.write("#### Langkah 4: FASE 2 (Optimasi Biaya Termurah)")
+        st.write("Setelah Fase 1 berhasil, kolom $R$ (Variabel Buatan) **dihapus** dari matriks. Fungsi objektif dikembalikan ke fungsi biaya asli ($Z$). Sistem kembali melakukan OBE untuk mencari harga termurah di antara solusi yang fisibel.")
+        st.success("✨ **Selesai!** Angka 'Total Biaya Termurah' yang muncul di layar Tab 2 adalah hasil mutlak dari komputasi matriks Simpleks Dua Fase ini.")
         
     st.markdown('</div>', unsafe_allow_html=True)
 

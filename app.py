@@ -72,7 +72,6 @@ st.markdown("""
      color: #EF8354 !important; 
  }
  header {visibility: hidden !important;}
- #MainMenu {visibility: hidden !important;}
  </style>
 """, unsafe_allow_html=True)
 

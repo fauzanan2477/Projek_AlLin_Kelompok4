@@ -104,11 +104,26 @@ if 'database_bahan' not in st.session_state:
 
 if 'target_kalori' not in st.session_state:
     st.session_state.update({
+
         'target_kalori': 1800.0, 'target_protein': 45.0, 'target_lemak': 40.0, 'target_karbo': 202.5,
         'nilai_aktivitas': 1.55, 'nilai_bmr': 1161.0, 'pembagi_waktu': 1,
         'rumus_amb_teks': r"\text{AMB (P)} = 16.97 Wt + 161.8 Ht + 371.2",
         'rumus_amb_angka': r"\text{AMB (P)} = (16.97 \times 30.0) + (161.8 \times 1.35) + 371.2"
     })
+
+if 'input_umur' not in st.session_state:
+    st.session_state['input_umur'] = 10
+if 'input_jk' not in st.session_state:
+    st.session_state['input_jk'] = "Laki-laki"
+if 'input_aktivitas' not in st.session_state:
+    st.session_state['input_aktivitas'] = "Cukup (Olahraga sedang 3-5 hari/minggu)"
+if 'input_bb' not in st.session_state:
+    st.session_state['input_bb'] = 30.0
+if 'input_tb' not in st.session_state:
+    st.session_state['input_tb'] = 135.0
+if 'input_skenario' not in st.session_state:
+    st.session_state['input_skenario'] = "1 Hari Penuh (Persis Jurnal UB)"
+
 
 # ==========================================
 # 4. MENU NAVBAR (TABS)
@@ -173,24 +188,47 @@ elif st.session_state['halaman'] == 'kalkulator':
     st.write("Sistem menghitung target Makronutrien anak berdasarkan **Persamaan AMB Schofield** dan tingkat aktivitas fisik (Merujuk pada Jurnal Brawijaya).")
     
     kolom1, kolom2 = st.columns(2)
+    # --- LOGIKA DI PAGE 6 & 7 (Ganti bagian kolom1 & kolom2 dengan kode ini) ---
+
     with kolom1:
-        umur_anak = st.number_input("Umur Anak (Tahun)", min_value=1, max_value=18, value=10, key='input_umur')
-        jenis_kelamin = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"], key='input_jk')
-        tingkat_aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", [
+        # Menggunakan value dari session_state agar tidak ter-reset
+        umur_anak = st.number_input(
+            "Umur Anak (Tahun)", min_value=1, max_value=18, 
+            value=int(st.session_state['input_umur']), key='input_umur'
+        )
+        
+        # Mencari indeks terakhir yang dipilih untuk selectbox
+        list_jk = ["Laki-laki", "Perempuan"]
+        idx_jk = list_jk.index(st.session_state['input_jk']) if st.session_state['input_jk'] in list_jk else 0
+        jenis_kelamin = st.selectbox("Jenis Kelamin", list_jk, index=idx_jk, key='input_jk')
+        
+        list_akt = [
             "Sangat Jarang (Pasif / Tidak olahraga)",
             "Jarang (Olahraga ringan 1-3 hari/minggu)",
             "Cukup (Olahraga sedang 3-5 hari/minggu)",
             "Sering (Olahraga berat 6-7 hari/minggu)",
             "Sangat Sering (Atlet / Fisik ekstra)"
-        ], index=2, key='input_aktivitas')
-        
+        ]
+        idx_akt = list_akt.index(st.session_state['input_aktivitas']) if st.session_state['input_aktivitas'] in list_akt else 2
+        tingkat_aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", list_akt, index=idx_akt, key='input_aktivitas')
+    
     with kolom2:
-        berat_badan = st.number_input("Berat Badan / Wt (kg)", min_value=5.0, value=30.0, key='input_bb')
-        tinggi_badan = st.number_input("Tinggi Badan / Ht (cm)", min_value=50.0, value=135.0, key='input_tb')
-        skenario_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", [
+        berat_badan = st.number_input(
+            "Berat Badan / Wt (kg)", min_value=5.0, 
+            value=float(st.session_state['input_bb']), key='input_bb'
+        )
+        tinggi_badan = st.number_input(
+            "Tinggi Badan / Ht (cm)", min_value=50.0, 
+            value=float(st.session_state['input_tb']), key='input_tb'
+        )
+        
+        list_ske = [
             "1 Hari Penuh (Persis Jurnal UB)", 
             "1x Makan Siang (Program MBG - Dibagi 3)"
-        ], key= 'input_skenario')
+        ]
+        idx_ske = list_ske.index(st.session_state['input_skenario']) if st.session_state['input_skenario'] in list_ske else 0
+        skenario_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", list_ske, index=idx_ske, key='input_skenario')
+
     
     if st.button("Hitung Target & Simpan", type="primary"):
         # 1. Menentukan Pengali Aktivitas

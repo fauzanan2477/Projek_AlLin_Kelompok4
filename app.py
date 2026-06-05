@@ -74,13 +74,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ==========================================
-# 2. HERO SECTION
-# ==========================================
-st.markdown("""
-<div class="hero-title">Sistem Optimasi Logistik<br><span>Makan Bergizi Gratis (MBG)</span></div>
-<div class="hero-subtitle">Integrasi Ilmu Gizi Biometrik dan Aljabar Linier (Metode Simpleks Dua Fase)</div>
-""", unsafe_allow_html=True)
 
 # ==========================================
 # 3. DATABASE (SESSION STATE)
@@ -108,25 +101,57 @@ if 'target_kalori' not in st.session_state:
 # ==========================================
 # 4. MENU NAVBAR (TABS)
 # ==========================================
-tab_beranda, tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
-    "Beranda",
-    "1. Kalkulator Gizi", 
-    "2. Eksekusi Optimasi", 
-    "3. Langkah Manual (Sangat Detail)", 
-    "4. Dokumentasi Rumus"
-])
-# --- HALAMAN BERANDA: JUDUL BESAR MENDOMINASI LAYAR ---
-with tab_beranda:
+# ==========================================
+# 4. SISTEM NAVIGASI HALAMAN (AI / GOOGLE STYLE)
+# ==========================================
+
+# Membuat memori penyimpan posisi halaman aktif
+if 'halaman' not in st.session_state:
+    st.session_state['halaman'] = 'beranda'
+
+# --- SITUS UTAMA / BERANDA (TAMPILAN BERSIH SEPERTI GOOGLE AI) ---
+if st.session_state['halaman'] == 'beranda':
+    st.write("##")
+    st.write("##")
+    
+    # Judul besar mendominasi di tengah latar belakang warna 1
     st.markdown("""
         <div class="hero-title-large">
             Sistem Pakar Optimasi Anggaran<br><span>Makan Bergizi Gratis (MBG)</span>
         </div>
-        <div class="instruction-text">
-            Silakan pilih tab menu di atas untuk memulai simulasi perhitungan kalkulator.
+        <div class="instruction-text" style="margin-bottom: 40px;">
+            Silakan pilih modul di bawah ini untuk memulai komputasi sistem pakar
         </div>
     """, unsafe_allow_html=True)
-# --- HALAMAN 1: KALKULATOR GIZI ---
-with tab_gizi:
+    
+    # Membuat 2 tombol pilihan utama di bawah judul
+    kolom_tombol1, kolom_tombol2 = st.columns(2)
+    
+    with kolom_tombol1:
+        if st.button("🚀 Masuk ke Kalkulator & Optimasi Gizi", use_container_width=True, type="primary"):
+            st.session_state['halaman'] = 'kalkulator'
+            st.rerun()
+            
+    with kolom_tombol2:
+        if st.button("📖 Lihat Langkah Perhitungan Manual & Rumus", use_container_width=True):
+            st.session_state['halaman'] = 'manual'
+            st.rerun()
+
+# --- MODUL KALKULATOR GIZI & OPTIMASI AL JABAR ---
+elif st.session_state['halaman'] == 'kalkulator':
+    # Tombol kembali ke Beranda utama
+    if st.button("⬅️ Kembali ke Beranda Utama"):
+        st.session_state['halaman'] = 'beranda'
+        st.rerun()
+        
+    # Judul otomatis mengecil ke atas menjadi header
+    st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
+    
+    # --- [KODE ASLI KALKULATOR GIZI KAMU] ---
+    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    st.write("### Penentuan Vektor Konstanta Gizi (B)")
+    # (Biarkan seluruh sisa kode Kalkulator Gizi & Eksekusi Optimasi lamamu berjalan di bawah sini sampai akhir Page 11)
+
     st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")

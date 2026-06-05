@@ -282,20 +282,34 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
             
         # Tombol aksi untuk memasukkan data ke database session_state
         # Tombol aksi untuk memasukkan data ke database_bahan (FORMAT DICTIONARY)
-        if st.button("💾 Masukkan Makanan ke Daftar", type="primary"):
-            if nama_baru.strip() != "":
-                # Format disesuaikan dengan Dictionary asli bawaan aplikasi kamu
-                st.session_state['database_bahan'][nama_baru] = {
-                    "Harga": harga_baru,
-                    "Kalori": kalori_baru,
-                    "Protein": protein_baru,
-                    "Lemak": lemak_baru,
-                    "Karbohidrat": karbo_baru
-                }
-                st.success(f"Berhasil menambahkan '{nama_baru}' ke dalam menu pilihan!")
-                st.rerun()
-            else:
-                st.error("Nama makanan tidak boleh kosong!")
+ # Tombol aksi untuk memasukkan data ke PANDAS DATAFRAME
+ if st.button(" Masukkan Makanan ke Daftar", type="primary"):
+     if nama_baru.strip() != "":
+         
+         # 1. Membuat satu baris data baru dalam bentuk DataFrame
+         df_baru = pd.DataFrame({
+             "Gunakan": [True], 
+             "Bahan Makanan": [nama_baru],
+             "Harga (Rp)": [harga_baru], 
+             "Kalori (Kkal)": [kalori_baru],
+             "Protein (g)": [protein_baru],
+             "Lemak (g)": [lemak_baru],
+             "Karbohidrat (g)": [karbo_baru],
+             "Batas Maksimal (g)": [harga_baru] # Menyamakan kolom bawaan asli kamu
+         })
+         
+         # 2. Menggabungkan baris baru ini ke dalam database_bahan lammamu
+         st.session_state['database_bahan'] = pd.concat([st.session_state['database_bahan'], df_baru], ignore_index=True)
+         
+         # 3. KUNCI UTAMA: Pindahkan halaman kembali ke 'kalkulator' (Input Data) 
+         # agar user bisa mencentang dan melihat kartu barunya!
+         st.session_state['halaman'] = 'kalkulator'
+         
+         st.success(f"Berhasil menambahkan '{nama_baru}' ke dalam menu pilihan!")
+         st.rerun()
+     else:
+         st.error("Nama makanan tidak boleh kosong!")
+
 
 
     st.write("---") # Garis pembatas estetik

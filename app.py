@@ -230,7 +230,7 @@ elif st.session_state['halaman'] == 'kalkulator':
     st.markdown('</div>', unsafe_allow_html=True)
 
    # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
- if st.session_state['hitung_sukses']:
+if st.session_state['hitung_sukses']:
      st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
      st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
      k1, k2, k3, k4 = st.columns(4)

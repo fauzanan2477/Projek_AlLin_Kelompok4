@@ -213,7 +213,8 @@ elif st.session_state['halaman'] == 'kalkulator':
             ].index(tingkat_aktivitas),
             'bb': berat_badan,
             'tb': tinggi_badan,
-            'waktu': 0 if skenario_waktu == "1 Hari Penuh (Persis Jurnal UB)" else 1
+            # [PERBAIKAN 3] Menyamakan string teks persis dengan opsi dropdown agar tidak reset
+            'waktu': 0 if skenario_waktu == "1 Hari Penuh (Sesuai Jurnal Referensi)" else 1
         }
         
         if tingkat_aktivitas == "Sangat Jarang (Pasif / Tidak olahraga)": pengali_aktivitas = 1.2
@@ -301,16 +302,17 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
             
         if st.button(" Masukkan Makanan ke Daftar", type="primary"):
             if nama_baru.strip() != "":
+                # [PERBAIKAN 2] Mengembalikan key ke "Harga (Rp)" agar tidak membuat kolom duplikat
                 df_baru = pd.DataFrame({
-                    "ID": [str(uuid.uuid4())], # Berikan ID Unik untuk lauk baru
+                    "ID": [str(uuid.uuid4())], 
                     "Gunakan": [True], 
                     "Bahan Makanan": [nama_baru],
-                    "Harga (Rp/100g)": [harga_baru], 
-                    "Kalori (Kkal/100g)": [kalori_baru],
-                    "Protein (g/100g)": [protein_baru],
-                    "Lemak (g/100g)": [lemak_baru],
-                    "Karbohidrat (g/100g)": [karbo_baru],
-                    "Batas Maksimal (g/100g)": [150.0]
+                    "Harga (Rp)": [harga_baru], 
+                    "Kalori (Kkal)": [kalori_baru],
+                    "Protein (g)": [protein_baru],
+                    "Lemak (g)": [lemak_baru],
+                    "Karbohidrat (g)": [karbo_baru],
+                    "Batas Maksimal (g)": [150.0]
                 })
                 st.session_state['database_bahan'] = pd.concat([st.session_state['database_bahan'], df_baru], ignore_index=True)
                 st.session_state['halaman'] = 'kalkulator'
@@ -323,7 +325,7 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
     st.write("Gunakan tombol +/- untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
       
     # ==========================================
-    # FUNGSI CALLBACK MENGHAPUS BERDASARKAN ID (DIJAMIN TIDAK ERROR)
+    # FUNGSI CALLBACK MENGHAPUS BERDASARKAN ID 
     # ==========================================
     def hapus_bahan_callback(id_to_drop):
         df_sekarang = st.session_state['database_bahan']
@@ -372,7 +374,7 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
                          )
                          list_batas_maksimal.append(porsi_maks)
                      
-                          
+                         
                          c_pop, c_del = st.columns([4, 1])
                          
                          with c_pop:
@@ -384,12 +386,12 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
                                  edit_lemak = st.number_input(f"Lemak (g/100g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{unique_uid}")
                                  edit_karbo = st.number_input(f"Karbohidrat (g/100g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{unique_uid}")
                                  
-                                 # Menyuntikkan langsung perubahan ke database memori
-                                 st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp/100g)"] = edit_harga
-                                 st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal/100g)"] = edit_kalori
-                                 st.session_state['database_bahan'].at[idx_bahan, "Protein (g/100g)"] = edit_protein
-                                 st.session_state['database_bahan'].at[idx_bahan, "Lemak (g/100g)"] = edit_lemak
-                                 st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g/100g)"] = edit_karbo
+                                 # [PERBAIKAN 2] Menyamakan update ke key "Harga (Rp)" asli agar Manual Tabel ter-update
+                                 st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
+                                 st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
+                                 st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
+                                 st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
+                                 st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
                                  
                          with c_del:
                              # TOMBOL HAPUS MENGGUNAKAN ID UID
@@ -428,7 +430,8 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
             df_ringkasan = bahan_terpilih.drop(columns=["ID", "Gunakan"])
             st.dataframe(df_ringkasan, use_container_width=True, hide_index=True)
 
-            array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp/100g)"], errors='coerce').fillna(0).values
+            # [PERBAIKAN 2] Memanggil kolom "Harga (Rp)" agar match dengan perbaikan sebelumnya
+            array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp)"], errors='coerce').fillna(0).values
             matriks_gizi = bahan_terpilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0).values
             
             

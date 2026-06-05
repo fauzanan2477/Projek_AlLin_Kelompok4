@@ -131,13 +131,17 @@ if st.session_state['halaman'] == 'beranda':
     kolom_tombol1, kolom_tombol2 = st.columns(2)
     
     with kolom_tombol1:
-        if st.button("🚀 Masuk ke Kalkulator & Optimasi Gizi", use_container_width=True, type="primary"):
+        if st.button("Kalkulator & Optimasi Gizi", use_container_width=True, type="primary"):
             st.session_state['halaman'] = 'kalkulator'
             st.rerun()
             
     with kolom_tombol2:
-        if st.button("📖 Lihat Langkah Perhitungan Manual & Rumus", use_container_width=True):
+        if st.button("Langkah Perhitungan Manual", use_container_width=True):
             st.session_state['halaman'] = 'manual'
+            st.rerun()
+    with kolom_tombol3:
+        if st.button("Rumus Lengkap", use_container_width=True):
+            st.session_state['halaman'] = 'dokumentasi'
             st.rerun()
 
 # --- MODUL KALKULATOR GIZI & OPTIMASI AL JABAR ---

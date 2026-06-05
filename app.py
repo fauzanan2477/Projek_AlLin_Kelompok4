@@ -230,14 +230,14 @@ elif st.session_state['halaman'] == 'kalkulator':
 
    # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
    
-       st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
-       st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
-       k1, k2, k3, k4 = st.columns(4)
-       k1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
-       k2.metric("Protein (Min 10%)", f"{st.session_state['target_protein']} Gram")
-       k3.metric("Lemak (Min 20%)", f"{st.session_state['target_lemak']} Gram")
-       k4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
-       st.markdown('</div>', unsafe_allow_html=True)
+   st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
+   st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
+   k1, k2, k3, k4 = st.columns(4)
+   k1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
+   k2.metric("Protein (Min 10%)", f"{st.session_state['target_protein']} Gram")
+   k3.metric("Lemak (Min 20%)", f"{st.session_state['target_lemak']} Gram")
+   k4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
+   st.markdown('</div>', unsafe_allow_html=True)
   
   
        # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:

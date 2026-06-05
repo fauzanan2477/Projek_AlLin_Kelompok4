@@ -354,7 +354,8 @@ elif st.session_state['halaman'] == 'kalkulator':
                 st.error(f"Error komputasi: {e}")
 
 # --- HALAMAN 3: LANGKAH MANUAL (SANGAT DETAIL SESUAI JURNAL) ---
-with tab_manual:
+elif st.session_state['halaman'] == 'manual':
+    st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### ✍️ Simulasi Pemodelan Aljabar Linier")
     st.write("Proses di bawah ini menjabarkan komputasi yang terjadi di balik layar, mengacu pada tahapan Metode Simpleks Dua Fase di Jurnal Universitas Brawijaya.")

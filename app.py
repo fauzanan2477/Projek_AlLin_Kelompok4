@@ -60,6 +60,7 @@ st.markdown("""
      font-weight: 900; 
      color: #FFFFFF !important; 
      line-height: 1.2; 
+     margin-top: 15px;
      margin-bottom: 15px; 
      text-align: center; 
  }

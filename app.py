@@ -289,12 +289,13 @@ elif st.session_state['halaman'] == 'kalkulator':
             'target_lemak': round(kebutuhan_lemak, 1), 'target_karbo': round(kebutuhan_karbo, 1),
             'rumus_amb_teks': teks_rumus, 'rumus_amb_angka': angka_rumus
         })
-    st.session_state['halaman'] = 'hasil_kalkulasi'
-    st.session_state['hitung_sukses'] = True
-    st.success(f"Target Gizi diperbarui ({skenario_waktu})!")
-    st.rerun()
+        st.success(f"Target Gizi diperbarui ({skenario_waktu})! ")
+        st.session_state['halaman'] = 'hasil_kalkulasi'
+        st.rerun()
+        st.session_state['hitung_sukses'] = True
+    st.markdown('</div>', unsafe_allow_html=True)
 
- 
+   
 elif st.session_state['halaman'] == 'hasil_kalkulasi':
     
     if st.button(" Kembali ke Input Data"):

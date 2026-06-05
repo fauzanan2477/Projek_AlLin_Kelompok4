@@ -108,15 +108,25 @@ if 'target_kalori' not in st.session_state:
 # ==========================================
 # 4. MENU NAVBAR (TABS)
 # ==========================================
-tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
+tab_beranda, tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
     "1. Kalkulator Gizi", 
     "2. Eksekusi Optimasi", 
     "3. Langkah Manual (Sangat Detail)", 
     "4. Dokumentasi Rumus"
 ])
-
+# --- HALAMAN BERANDA: JUDUL BESAR MENDOMINASI LAYAR ---
+with tab_beranda:
+    st.markdown("""
+        <div class="hero-title-large">
+            Sistem Pakar Optimasi Anggaran<br><span>Makan Bergizi Gratis (MBG)</span>
+        </div>
+        <div class="instruction-text">
+            Silakan pilih tab menu di atas untuk memulai simulasi perhitungan kalkulator.
+        </div>
+    """, unsafe_allow_html=True)
 # --- HALAMAN 1: KALKULATOR GIZI ---
 with tab_gizi:
+    st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")
     st.write("Sistem menghitung target Makronutrien anak berdasarkan **Persamaan AMB Schofield** dan tingkat aktivitas fisik (Merujuk pada Jurnal Brawijaya).")

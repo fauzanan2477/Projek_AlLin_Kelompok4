@@ -153,9 +153,6 @@ elif st.session_state['halaman'] == 'kalkulator':
     st.write("### Penentuan Vektor Konstanta Gizi (B)")
     # (Biarkan seluruh sisa kode Kalkulator Gizi & Eksekusi Optimasi lamamu berjalan di bawah sini sampai akhir Page 11)
 
-    st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="white-box">', unsafe_allow_html=True)
-    st.write("### 👦 Penentuan Vektor Konstanta Gizi (B)")
     st.write("Sistem menghitung target Makronutrien anak berdasarkan **Persamaan AMB Schofield** dan tingkat aktivitas fisik (Merujuk pada Jurnal Brawijaya).")
     
     kolom1, kolom2 = st.columns(2)

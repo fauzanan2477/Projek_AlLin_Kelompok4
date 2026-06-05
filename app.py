@@ -10,21 +10,81 @@ st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #f4f6f9; color: #111111; }
-    .block-container { padding-top: 2rem; max-width: 1100px; }
-    .white-box { background-color: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; color: #333333;}
-    .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 30px; border-bottom: 2px solid #dcdde1; background-color: #ffffff; padding: 10px; border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { font-weight: 800; font-size: 1.15rem; color: #555555; background-color: transparent; border: none; }
-    .stTabs [aria-selected="true"] { color: #1e3799; border-bottom: 4px solid #1e3799; }
-    h1, h2, h3, h4, p { color: #111111 !important; }
-    .white-box li { color: #333333; } 
-    .hero-title { font-size: 3.2rem; font-weight: 900; color: #000000 !important; line-height: 1.2; margin-bottom: 15px; text-align: center; }
-    .hero-title span { color: #1e3799 !important; }
-    .hero-subtitle { font-size: 1.2rem; color: #444444 !important; font-weight: 500; text-align: center; margin-bottom: 30px;}
-    .result-card { background: linear-gradient(135deg, #1e3799, #0984e3); color: white !important; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);}
-    .result-card h2 { color: #ffffff !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
-    .result-card p { color: #dff9fb !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
-    </style>
+    /* 1 & 2: Latar Belakang Utama Aplikasi (Jet Black ke Blue Slate) */
+ .stApp { 
+     background: linear-gradient(135deg, #2D3142, #4F5D75); 
+     color: #FFFFFF; 
+ }
+ .block-container { padding-top: 2rem; max-width: 1100px; }
+ 
+ /* 3: Kolom/Kotak Tempat Mengisi Angka & Input Data (Silver) */
+ .white-box, div[data-testid="stForm"], .stConfigDrop { 
+     background-color: #BFC0C0 !important; 
+     padding: 25px; 
+     border-radius: 12px; 
+     box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
+     margin-bottom: 20px; 
+     border: 1px solid #4F5D75; 
+     color: #2D3142 !important; /* Teks di dalam kotak input dibuat gelap agar kontras */
+ }
+  .white-box li, .white-box p, .white-box h3, .white-box h4, .white-box h5 { 
+     color: #2D3142 !important; 
+ }
+ 
+ /* Gaya untuk Tab Navigasi */
+ .stTabs [data-baseweb="tab-list"] { 
+     justify-content: center; 
+     gap: 30px; 
+     border-bottom: 2px solid #4F5D75; 
+     background-color: #2D3142; 
+     padding: 10px; 
+     border-radius: 10px; 
+ }
+ .stTabs [data-baseweb="tab"] { 
+     font-weight: 800; 
+     font-size: 1.15rem; 
+     color: #BFC0C0; 
+          background-color: transparent; 
+     border: none; 
+ }
+ /* 5: Aksen Warna Tab Aktif (Coral Glow) */
+ .stTabs [aria-selected="true"] { 
+     color: #EF8354 !important; 
+     border-bottom: 4px solid #EF8354 !important; 
+ }
+ 
+ /* 4 & 5: Warna Tulisan Utama Website */
+ h1, h2, h3, h4, h5, p, label { color: #FFFFFF !important; }
+ .hero-title { 
+      font-size: 3.2rem; 
+     font-weight: 900; 
+     color: #FFFFFF !important; 
+     line-height: 1.2; 
+     margin-bottom: 15px; 
+     text-align: center; 
+ }
+ /* 5: Aksen Judul Utama (Coral Glow) */
+ .hero-title span { color: #EF8354 !important; }
+ .hero-subtitle { 
+     font-size: 1.2rem; 
+     color: #BFC0C0 !important; 
+     font-weight: 500; 
+     text-align: center; 
+     margin-bottom: 30px;
+ }
+  /* 5: Kartu Hasil Akhir/Biaya Termurah (Coral Glow) */
+ .result-card { 
+     background: linear-gradient(135deg, #EF8354, #d36b3d); 
+     color: #FFFFFF !important; 
+     border-radius: 12px; 
+     padding: 30px; 
+     text-align: center; 
+     margin: 20px 0px; 
+     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+ }
+ .result-card h2 { color: #FFFFFF !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
+ .result-card p { color: #FFFFFF !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
+ </style>
 """, unsafe_allow_html=True)
 
 # ==========================================

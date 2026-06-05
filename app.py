@@ -283,7 +283,7 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
         # Tombol aksi untuk memasukkan data ke database session_state
         # Tombol aksi untuk memasukkan data ke database_bahan (FORMAT DICTIONARY)
  # Tombol aksi untuk memasukkan data ke PANDAS DATAFRAME
-       if st.button(" Masukkan Makanan ke Daftar", type="primary"):
+        if st.button(" Masukkan Makanan ke Daftar", type="primary"):
             if nama_baru.strip() != "":
                 
                 # 1. Membuat satu baris data baru dalam bentuk DataFrame

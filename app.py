@@ -256,6 +256,51 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
   
        # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
     st.write("###  Porsi Menu Makan Bergizi Gratis (MBG)")
+     # ==========================================
+    # FORM TAMBAH LAUK / MAKANAN BARU SECARA DINAMIS
+    # ==========================================
+    with st.expander("➕ Tambah Menu Makanan / Lauk Baru Custom"):
+        st.write("Masukkan detail bahan makanan baru untuk dimasukkan ke dalam daftar kalkulasi:")
+        
+        # Membuat form input teks dan angka berdampingan
+        c_nama, c_harga = st.columns([2, 1])
+        with c_nama:
+            nama_baru = st.text_input("Nama Makanan / Lauk Baru:", placeholder="Contoh: Daging Sapi, Tahu, Ikan Kembung")
+        with c_harga:
+            harga_baru = st.number_input("Harga per Gram (Rp):", min_value=0.0, value=15.0, step=1.0)
+            
+        # Membuat 4 kolom untuk input kandungan gizi per gram
+        g1, g2, g3, g4 = st.columns(4)
+        with g1:
+            kalori_baru = st.number_input("Kalori (Kkal/g):", min_value=0.0, value=2.5, step=0.1)
+        with g2:
+            protein_baru = st.number_input("Protein (g/g):", min_value=0.0, value=0.2, step=0.01)
+        with g3:
+            lemak_baru = st.number_input("Lemak (g/g):", min_value=0.0, value=0.1, step=0.01)
+        with g4:
+            karbo_baru = st.number_input("Karbohidrat (g/g):", min_value=0.0, value=0.0, step=0.01)
+            
+        # Tombol aksi untuk memasukkan data ke database session_state
+        if st.button("💾 Masukkan Makanan ke Daftar", type="primary"):
+            if nama_baru.strip() != "":
+                # Format struktur data baru disesuaikan dengan isi database aslimu
+                menu_baru = {
+                    "Harga": harga_baru,
+                    "Kalori": kalori_baru,
+                    "Protein": protein_baru,
+                    "Lemak": lemak_baru,
+                    "Karbohidrat": karbo_baru
+                }
+                
+                # Memasukkan ke dalam database dynamic di session_state kamu
+                st.session_state['database_bahan'][nama_baru] = menu_baru
+                st.success(f"Berhasil menambahkan '{nama_baru}' ke dalam menu pilihan!")
+                st.rerun()
+            else:
+                st.error("Nama makanan tidak boleh kosong!")
+
+    st.write("---") # Garis pembatas estetik
+
     st.write("Gunakan tombol +/- untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
       
      # Wadah penampung data dinamis dari user
@@ -369,6 +414,9 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
 
 # --- HALAMAN 3: LANGKAH MANUAL (SANGAT DETAIL SESUAI JURNAL) ---
 elif st.session_state['halaman'] == 'manual':
+    if st.button("Kembali ke Beranda Utama"):
+        st.session_state['halaman'] = 'beranda'
+        st.rerun()
     st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### ✍️ Simulasi Pemodelan Aljabar Linier")
@@ -474,7 +522,7 @@ elif st.session_state['halaman'] == 'manual':
 
 # --- HALAMAN 4: DOKUMENTASI (RUMUS) ---
 elif st.session_state['halaman'] == 'dokumentasi':
-    if st.button("⬅️ Kembali ke Beranda Utama"):
+    if st.button("Kembali ke Beranda Utama"):
         st.session_state['halaman'] = 'beranda'
         st.rerun()
         

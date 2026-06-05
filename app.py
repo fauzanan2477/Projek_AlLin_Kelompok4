@@ -10,6 +10,19 @@ st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
 
 st.markdown("""
  <style>
+  .fade-in-up {
+     animation: fadeInUp 0.8s ease-out forwards;
+ }
+ @keyframes fadeInUp {
+     0% {
+         opacity: 0;
+         transform: translateY(30px); /* Memulai dari 30 pixel di bawah posisi asli */
+     }
+     100% {
+         opacity: 1;
+         transform: translateY(0);    # Kembali ke posisi asli dengan mulus
+     }
+ }
  /* Latar Belakang Utama Aplikasi (Warna 1) */
  .stApp { 
      background-color: #2D3142; 
@@ -231,7 +244,7 @@ elif st.session_state['halaman'] == 'kalkulator':
 
    # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
 if st.session_state['hitung_sukses']:
-     st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
+     st.markdown('<div class="white-box fade-in-up">', unsafe_allow_html=True)
      st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
      k1, k2, k3, k4 = st.columns(4)
      k1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")

@@ -71,7 +71,17 @@ st.markdown("""
  .stTabs [aria-selected="true"] { 
      color: #EF8354 !important; 
  }
- header {visibility: hidden !important;}
+ /* Menghapus latar belakang batang hitam atas */
+ header {
+     background-color: transparent !important;
+     background: transparent !important;
+     box-shadow: none !important;
+ }
+ 
+ /* Memastikan tombol menu garis tiga tetap kelihatan dan warnanya putih agar kontras */
+ div[data-testid="stToolbar"] {
+     background: transparent !important;
+ }
  </style>
 """, unsafe_allow_html=True)
 

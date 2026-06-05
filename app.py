@@ -9,84 +9,70 @@ from scipy.optimize import linprog
 st.set_page_config(page_title="Sistem Pakar MBG", layout="wide")
 
 st.markdown("""
-    <style>
-    /* 1 & 2: Latar Belakang Utama Aplikasi (Jet Black ke Blue Slate) */
+ <style>
+ /* Latar Belakang Utama Aplikasi (Warna 1) */
  .stApp { 
-     background: linear-gradient(135deg, #2D3142, #4F5D75); 
+     background-color: #2D3142; 
      color: #FFFFFF; 
  }
- .block-container { padding-top: 2rem; max-width: 1100px; }
  
- /* 3: Kolom/Kotak Tempat Mengisi Angka & Input Data (Silver) */
- .white-box, div[data-testid="stForm"], .stConfigDrop { 
-     background-color: #BFC0C0 !important; 
-     padding: 25px; 
-     border-radius: 12px; 
-     box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
-     margin-bottom: 20px; 
-     border: 1px solid #4F5D75; 
-     color: #2D3142 !important; /* Teks di dalam kotak input dibuat gelap agar kontras */
+ /* Gaya Judul Besar Mendominasi (Di Tab Beranda) */
+ .hero-title-large { 
+     font-size: 3.5rem; 
+     font-weight: 900; 
+     color: #FFFFFF; 
+     text-align: center; 
+     margin-top: 15vh; 
+     line-height: 1.3;
  }
-  .white-box li, .white-box p, .white-box h3, .white-box h4, .white-box h5 { 
-     color: #2D3142 !important; 
- }
+ .hero-title-large span { color: #EF8354; } 
  
- /* Gaya untuk Tab Navigasi */
+ /* Gaya Petunjuk Formal */
+ .instruction-text {
+     font-size: 1.2rem;
+     color: #BFC0C0; 
+     text-align: center;
+     margin-top: 40px;
+     font-weight: 500;
+     letter-spacing: 0.5px;
+     animation: blink 2s infinite; 
+ }
+ @keyframes blink {
+     0% { opacity: 0.4; }
+     50% { opacity: 1; }
+     100% { opacity: 0.4; }
+ }
+
+ /* Gaya Judul Mengecil Jadi Header (Di Tab Lain) */
+ .header-title-small { 
+     font-size: 1.8rem; 
+     font-weight: 800; 
+     color: #FFFFFF; 
+     text-align: left; 
+     margin-bottom: 20px;
+     border-bottom: 2px solid #4F5D75;
+     padding-bottom: 10px;
+ }
+ .header-title-small span { color: #EF8354; }
+
+ /* Gaya Tab Navigasi Menu */
  .stTabs [data-baseweb="tab-list"] { 
      justify-content: center; 
-     gap: 30px; 
-     border-bottom: 2px solid #4F5D75; 
-     background-color: #2D3142; 
-     padding: 10px; 
-     border-radius: 10px; 
+     gap: 20px; 
+     background-color: #4F5D75; 
+     padding: 8px; 
+     border-radius: 8px; 
  }
  .stTabs [data-baseweb="tab"] { 
-     font-weight: 800; 
-     font-size: 1.15rem; 
+     font-weight: 700; 
      color: #BFC0C0; 
-          background-color: transparent; 
-     border: none; 
  }
- /* 5: Aksen Warna Tab Aktif (Coral Glow) */
  .stTabs [aria-selected="true"] { 
      color: #EF8354 !important; 
-     border-bottom: 4px solid #EF8354 !important; 
  }
- 
- /* 4 & 5: Warna Tulisan Utama Website */
- h1, h2, h3, h4, h5, p, label { color: #FFFFFF !important; }
- .hero-title { 
-      font-size: 3.2rem; 
-     font-weight: 900; 
-     color: #FFFFFF !important; 
-     line-height: 1.2; 
-     margin-top: 15px;
-     margin-bottom: 15px; 
-     text-align: center; 
- }
- /* 5: Aksen Judul Utama (Coral Glow) */
- .hero-title span { color: #EF8354 !important; }
- .hero-subtitle { 
-     font-size: 1.2rem; 
-     color: #BFC0C0 !important; 
-     font-weight: 500; 
-     text-align: center; 
-     margin-bottom: 30px;
- }
-  /* 5: Kartu Hasil Akhir/Biaya Termurah (Coral Glow) */
- .result-card { 
-     background: linear-gradient(135deg, #EF8354, #d36b3d); 
-     color: #FFFFFF !important; 
-     border-radius: 12px; 
-     padding: 30px; 
-     text-align: center; 
-     margin: 20px 0px; 
-     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
- }
- .result-card h2 { color: #FFFFFF !important; font-size: 3.5rem; margin: 0; font-weight: 900;}
- .result-card p { color: #FFFFFF !important; font-size: 1.1rem; margin: 0; font-weight: bold; letter-spacing: 1px;}
  </style>
 """, unsafe_allow_html=True)
+
 
 # ==========================================
 # 2. HERO SECTION

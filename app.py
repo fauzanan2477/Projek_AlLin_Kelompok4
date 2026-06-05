@@ -469,7 +469,12 @@ elif st.session_state['halaman'] == 'manual':
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- HALAMAN 4: DOKUMENTASI (RUMUS) ---
-with tab_docs:
+elif st.session_state['halaman'] == 'dokumentasi':
+    if st.button("⬅️ Kembali ke Beranda Utama"):
+        st.session_state['halaman'] = 'beranda'
+        st.rerun()
+        
+    st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### 📖 Integrasi Matriks Aljabar")
     st.latex(r"\text{Fungsi Minimum: } Z = \mathbf{C}^T \mathbf{X} \quad | \quad \text{Kendala: } \mathbf{A}\mathbf{X} \ge \mathbf{B}")

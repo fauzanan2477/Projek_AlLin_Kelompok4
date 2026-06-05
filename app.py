@@ -229,129 +229,129 @@ elif st.session_state['halaman'] == 'kalkulator':
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
-with tab_aljabar:
-    st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
-    st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
-    k2.metric("Protein (Min 10%)", f"{st.session_state['target_protein']} Gram")
-    k3.metric("Lemak (Min 20%)", f"{st.session_state['target_lemak']} Gram")
-    k4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-     # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
-    st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
-    st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+ 
+     st.markdown('<div class="white-box" style="border-left: 5px solid #e1b12c;">', unsafe_allow_html=True)
+     st.write("#### 🎯 Target Gizi Saat Ini (Syarat Matriks Batas Bawah):")
+     k1, k2, k3, k4 = st.columns(4)
+     k1.metric("Kalori Minimal", f"{st.session_state['target_kalori']} Kkal")
+     k2.metric("Protein (Min 10%)", f"{st.session_state['target_protein']} Gram")
+     k3.metric("Lemak (Min 20%)", f"{st.session_state['target_lemak']} Gram")
+     k4.metric("Karbo (Min 45%)", f"{st.session_state['target_karbo']} Gram")
+     st.markdown('</div>', unsafe_allow_html=True)
+ 
+ 
+      # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
+     st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+     st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+      
+      # Wadah penampung data dinamis dari user
+     list_gunakan = []
+     list_batas_maksimal = []
+      
+     database_aktif = st.session_state['database_bahan']
+     total_bahan = len(database_aktif)
+      
+      # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
+     for i in range(0, total_bahan, 3):
+          # Membuat 3 kolom horizontal berdampingan di satu baris
+          kolom_card = st.columns(3)
+          
+          # Mengisi tiap-tiap kolom (Maksimal 3 card per baris)
+          for j in range(3):
+              idx_bahan = i + j
+              if idx_bahan < total_bahan:
+                  row = database_aktif.iloc[idx_bahan]
+                  
+                  # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
+                  with kolom_card[j]:
+                      # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
+                      with st.container(border=True):
+                      
+                      # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
+                          c_nama, c_aktif = st.columns([3, 1])
+                          with c_nama:
+                              st.markdown(f"##### **{row['Bahan Makanan']}**")
+                          with c_aktif:
+                              status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
+                              list_gunakan.append(status_aktif)
+                          
+                          # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
+                          porsi_maks = st.number_input(
+                              "Batas Maksimal (Gram):",
+                              min_value=0.0,
+                              max_value=1000.0,
+                              value=float(row["Batas Maksimal (g)"]),
+                              step=50.0,
+                              key=f"num_{idx_bahan}"
+                          )
+                          list_batas_maksimal.append(porsi_maks)
+                      
+                      # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
+                      with st.popover("📋 Detail & Edit Gizi", use_container_width=True):
+                          st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
+                          edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{idx_bahan}")
+                          edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{idx_bahan}")
+                          edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{idx_bahan}")
+                          edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{idx_bahan}")
+                          edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{idx_bahan}")
+                          
+                          # Menyuntikkan langsung perubahan ke database memori
+                          st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
+                          st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
+                          st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
+                          st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
+                          st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
+                          
+                      
      
-     # Wadah penampung data dinamis dari user
-    list_gunakan = []
-    list_batas_maksimal = []
+      # Sinkronisasi akhir data checkbox dan stepper ke database utama
+     st.session_state['database_bahan']['Gunakan'] = list_gunakan
+     st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+ 
+ 
      
-    database_aktif = st.session_state['database_bahan']
-    total_bahan = len(database_aktif)
-     
-     # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
-    for i in range(0, total_bahan, 3):
-         # Membuat 3 kolom horizontal berdampingan di satu baris
-         kolom_card = st.columns(3)
+     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
+         bahan_terpilih = st.session_state['database_bahan'][st.session_state['database_bahan']["Gunakan"] == True].copy()
          
-         # Mengisi tiap-tiap kolom (Maksimal 3 card per baris)
-         for j in range(3):
-             idx_bahan = i + j
-             if idx_bahan < total_bahan:
-                 row = database_aktif.iloc[idx_bahan]
+         if len(bahan_terpilih) < 2:
+             st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")
+         else:
+             array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp)"], errors='coerce').fillna(0).values
+             matriks_gizi = bahan_terpilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0).values
+             
+             # Batas Maksimal dikonversi dari gram ke unit pengali (dibagi 100)
+             batas_maksimal = [(0, p/100.0) for p in pd.to_numeric(bahan_terpilih["Batas Maksimal (g)"], errors='coerce').fillna(1000).values]
+             
+             # Matriks A dikali -1 karena linprog SciPy menggunakan fungsi <= sedangkan kita butuh >=
+             A_kiri = -1 * matriks_gizi.T
+             B_kanan = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']])
+             
+             try:
+                 solusi = linprog(array_harga, A_ub=A_kiri, b_ub=B_kanan, bounds=batas_maksimal, method='highs')
                  
-                 # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
-                 with kolom_card[j]:
-                     # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
-                     with st.container(border=True):
+                 if solusi.success:
+                     st.markdown(f"""
+                     <div class="result-card">
+                         <p>Total Biaya Paling Minimum (Titik Optimal)</p>
+                         <h2>Rp {solusi.fun:,.0f}</h2>
+                         <p>Solusi Makanan Termurah Sesuai Target Waktu</p>
+                     </div>
+                     """, unsafe_allow_html=True)
                      
-                     # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
-                         c_nama, c_aktif = st.columns([3, 1])
-                         with c_nama:
-                             st.markdown(f"##### **{row['Bahan Makanan']}**")
-                         with c_aktif:
-                             status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
-                             list_gunakan.append(status_aktif)
-                         
-                         # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
-                         porsi_maks = st.number_input(
-                             "Batas Maksimal (Gram):",
-                             min_value=0.0,
-                             max_value=1000.0,
-                             value=float(row["Batas Maksimal (g)"]),
-                             step=50.0,
-                             key=f"num_{idx_bahan}"
-                         )
-                         list_batas_maksimal.append(porsi_maks)
-                     
-                     # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
-                     with st.popover("📋 Detail & Edit Gizi", use_container_width=True):
-                         st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
-                         edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{idx_bahan}")
-                         edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{idx_bahan}")
-                         edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{idx_bahan}")
-                         edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{idx_bahan}")
-                         edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{idx_bahan}")
-                         
-                         # Menyuntikkan langsung perubahan ke database memori
-                         st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
-                         st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
-                         st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
-                         st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
-                         st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
-                         
-                     
-    
-     # Sinkronisasi akhir data checkbox dan stepper ke database utama
-    st.session_state['database_bahan']['Gunakan'] = list_gunakan
-    st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
-
-
-    
-    if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
-        bahan_terpilih = st.session_state['database_bahan'][st.session_state['database_bahan']["Gunakan"] == True].copy()
-        
-        if len(bahan_terpilih) < 2:
-            st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")
-        else:
-            array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp)"], errors='coerce').fillna(0).values
-            matriks_gizi = bahan_terpilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0).values
-            
-            # Batas Maksimal dikonversi dari gram ke unit pengali (dibagi 100)
-            batas_maksimal = [(0, p/100.0) for p in pd.to_numeric(bahan_terpilih["Batas Maksimal (g)"], errors='coerce').fillna(1000).values]
-            
-            # Matriks A dikali -1 karena linprog SciPy menggunakan fungsi <= sedangkan kita butuh >=
-            A_kiri = -1 * matriks_gizi.T
-            B_kanan = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']])
-            
-            try:
-                solusi = linprog(array_harga, A_ub=A_kiri, b_ub=B_kanan, bounds=batas_maksimal, method='highs')
-                
-                if solusi.success:
-                    st.markdown(f"""
-                    <div class="result-card">
-                        <p>Total Biaya Paling Minimum (Titik Optimal)</p>
-                        <h2>Rp {solusi.fun:,.0f}</h2>
-                        <p>Solusi Makanan Termurah Sesuai Target Waktu</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown('<div class="white-box">', unsafe_allow_html=True)
-                    st.write("### ⚖️ Vektor Rekomendasi Takaran")
-                    hasil_gram = solusi.x * 100 
-                    tabel_hasil = pd.DataFrame({
-                        "Bahan Makanan": bahan_terpilih["Bahan Makanan"].values,
-                        "Takaran Disarankan": [f"{g:,.0f} Gram" for g in hasil_gram],
-                        "Biaya Realisasi": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, array_harga)]
-                    })
-                    st.table(tabel_hasil[solusi.x > 0.01].reset_index(drop=True))
-                    st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.error("🚨 SPL Infeasible: Matriks gagal terpenuhi. Coba perbesar 'Batas Maksimal (g)' atau tambahkan variasi lauk.")
-            except Exception as e:
-                st.error(f"Error komputasi: {e}")
+                     st.markdown('<div class="white-box">', unsafe_allow_html=True)
+                     st.write("### ⚖️ Vektor Rekomendasi Takaran")
+                     hasil_gram = solusi.x * 100 
+                     tabel_hasil = pd.DataFrame({
+                         "Bahan Makanan": bahan_terpilih["Bahan Makanan"].values,
+                         "Takaran Disarankan": [f"{g:,.0f} Gram" for g in hasil_gram],
+                         "Biaya Realisasi": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, array_harga)]
+                     })
+                     st.table(tabel_hasil[solusi.x > 0.01].reset_index(drop=True))
+                     st.markdown('</div>', unsafe_allow_html=True)
+                 else:
+                     st.error("🚨 SPL Infeasible: Matriks gagal terpenuhi. Coba perbesar 'Batas Maksimal (g)' atau tambahkan variasi lauk.")
+             except Exception as e:
+                 st.error(f"Error komputasi: {e}")
 
 # --- HALAMAN 3: LANGKAH MANUAL (SANGAT DETAIL SESUAI JURNAL) ---
 with tab_manual:

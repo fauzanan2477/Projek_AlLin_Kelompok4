@@ -191,17 +191,20 @@ elif st.session_state['halaman'] == 'kalkulator':
     # --- LOGIKA DI PAGE 6 & 7 (Ganti bagian kolom1 & kolom2 dengan kode ini) ---
 
     with kolom1:
-        # Menggunakan value dari session_state agar tidak ter-reset
+        # 1. Input Umur Anak
         umur_anak = st.number_input(
             "Umur Anak (Tahun)", min_value=1, max_value=18, 
-            value=int(st.session_state['input_umur']), key='input_umur'
+            value=int(st.session_state['input_umur']) # Hapus parameter key
         )
+        st.session_state['input_umur'] = umur_anak # Simpan manual ke memori
         
-        # Mencari indeks terakhir yang dipilih untuk selectbox
+        # 2. Input Jenis Kelamin
         list_jk = ["Laki-laki", "Perempuan"]
         idx_jk = list_jk.index(st.session_state['input_jk']) if st.session_state['input_jk'] in list_jk else 0
-        jenis_kelamin = st.selectbox("Jenis Kelamin", list_jk, index=idx_jk, key='input_jk')
+        jenis_kelamin = st.selectbox("Jenis Kelamin", list_jk, index=idx_jk) # Hapus parameter key
+        st.session_state['input_jk'] = jenis_kelamin # Simpan manual ke memori
         
+        # 3. Input Tingkat Aktivitas
         list_akt = [
             "Sangat Jarang (Pasif / Tidak olahraga)",
             "Jarang (Olahraga ringan 1-3 hari/minggu)",
@@ -210,24 +213,32 @@ elif st.session_state['halaman'] == 'kalkulator':
             "Sangat Sering (Atlet / Fisik ekstra)"
         ]
         idx_akt = list_akt.index(st.session_state['input_aktivitas']) if st.session_state['input_aktivitas'] in list_akt else 2
-        tingkat_aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", list_akt, index=idx_akt, key='input_aktivitas')
+        tingkat_aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", list_akt, index=idx_akt) # Hapus parameter key
+        st.session_state['input_aktivitas'] = tingkat_aktivitas # Simpan manual ke memori
     
     with kolom2:
+        # 4. Input Berat Badan
         berat_badan = st.number_input(
             "Berat Badan / Wt (kg)", min_value=5.0, 
-            value=float(st.session_state['input_bb']), key='input_bb'
+            value=float(st.session_state['input_bb']) # Hapus parameter key
         )
+        st.session_state['input_bb'] = berat_badan # Simpan manual ke memori
+        
+        # 5. Input Tinggi Badan
         tinggi_badan = st.number_input(
             "Tinggi Badan / Ht (cm)", min_value=50.0, 
-            value=float(st.session_state['input_tb']), key='input_tb'
+            value=float(st.session_state['input_tb']) # Hapus parameter key
         )
+        st.session_state['input_tb'] = tinggi_badan # Simpan manual ke memori
         
+        # 6. Input Skenario Waktu
         list_ske = [
             "1 Hari Penuh (Persis Jurnal UB)", 
             "1x Makan Siang (Program MBG - Dibagi 3)"
         ]
         idx_ske = list_ske.index(st.session_state['input_skenario']) if st.session_state['input_skenario'] in list_ske else 0
-        skenario_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", list_ske, index=idx_ske, key='input_skenario')
+        skenario_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", list_ske, index=idx_ske) # Hapus parameter key
+        st.session_state['input_skenario'] = skenario_waktu # Simpan manual ke memori
 
     
     if st.button("Hitung Target & Simpan", type="primary"):

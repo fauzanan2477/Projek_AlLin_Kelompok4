@@ -123,12 +123,12 @@ if 'halaman' not in st.session_state:
 if 'hitung_sukses' not in st.session_state:
     st.session_state['hitung_sukses'] = False
 
-# --- SITUS UTAMA / BERANDA (TAMPILAN BERSIH SEPERTI GOOGLE AI) ---
+
 if st.session_state['halaman'] == 'beranda':
     st.write("##")
     st.write("##")
     
-    # Judul besar mendominasi di tengah latar belakang warna 1
+    
     st.markdown("""
         <div class="hero-title-large">
             Sistem Pakar Optimasi Anggaran<br><span>Makan Bergizi Gratis (MBG)</span>
@@ -138,7 +138,7 @@ if st.session_state['halaman'] == 'beranda':
         </div>
     """, unsafe_allow_html=True)
     
-    # Membuat 2 tombol pilihan utama di bawah judul
+ 
     kolom_tombol1, kolom_tombol2, kolom_tombol3 = st.columns(3)
     
     with kolom_tombol1:
@@ -157,15 +157,15 @@ if st.session_state['halaman'] == 'beranda':
 
 # --- MODUL KALKULATOR GIZI & OPTIMASI AL JABAR ---
 elif st.session_state['halaman'] == 'kalkulator':
-    # Tombol kembali ke Beranda utama
+    
     if st.button("⬅️ Kembali ke Beranda Utama"):
         st.session_state['halaman'] = 'beranda'
         st.rerun()
         
-    # Judul otomatis mengecil ke atas menjadi header
+    
     st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     
-    # --- [KODE ASLI KALKULATOR GIZI KAMU] ---
+    
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     st.write("### Penentuan Vektor Konstanta Gizi (B)")
     # (Biarkan seluruh sisa kode Kalkulator Gizi & Eksekusi Optimasi lamamu berjalan di bawah sini sampai akhir Page 11)
@@ -174,23 +174,23 @@ elif st.session_state['halaman'] == 'kalkulator':
     
     kolom1, kolom2 = st.columns(2)
     with kolom1:
-        umur_anak = st.number_input("Umur Anak (Tahun)", min_value=1, max_value=18, value=10)
-        jenis_kelamin = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+        umur_anak = st.number_input("Umur Anak (Tahun)", min_value=1, max_value=18, value=10, key='input_umur')
+        jenis_kelamin = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"], key='input_jk')
         tingkat_aktivitas = st.selectbox("Tingkat Aktivitas Fisik (Olahraga)", [
             "Sangat Jarang (Pasif / Tidak olahraga)",
             "Jarang (Olahraga ringan 1-3 hari/minggu)",
             "Cukup (Olahraga sedang 3-5 hari/minggu)",
             "Sering (Olahraga berat 6-7 hari/minggu)",
             "Sangat Sering (Atlet / Fisik ekstra)"
-        ], index=2)
+        ], index=2, key='input_aktivitas')
         
     with kolom2:
-        berat_badan = st.number_input("Berat Badan / Wt (kg)", min_value=5.0, value=30.0)
-        tinggi_badan = st.number_input("Tinggi Badan / Ht (cm)", min_value=50.0, value=135.0)
+        berat_badan = st.number_input("Berat Badan / Wt (kg)", min_value=5.0, value=30.0, key='input_bb')
+        tinggi_badan = st.number_input("Tinggi Badan / Ht (cm)", min_value=50.0, value=135.0, key='input_tb')
         skenario_waktu = st.selectbox("Target Pemenuhan Gizi (Skenario)", [
             "1 Hari Penuh (Persis Jurnal UB)", 
             "1x Makan Siang (Program MBG - Dibagi 3)"
-        ])
+        ], key= 'input_skenario')
     
     if st.button("Hitung Target & Simpan", type="primary"):
         # 1. Menentukan Pengali Aktivitas
@@ -246,11 +246,10 @@ elif st.session_state['halaman'] == 'kalkulator':
         st.session_state['hitung_sukses'] = True
     st.markdown('</div>', unsafe_allow_html=True)
 
-   # --- HALAMAN 2: EKSEKUSI OPTIMASI ---
-# --- TAMBAHKAN GERBANG HALAMAN BARU INI MENTOK DI KIRI ---
+   
 elif st.session_state['halaman'] == 'hasil_kalkulasi':
-    # Tombol untuk kembali ke formulir input data sebelumnya jika ingin mengubah angka
-    if st.button("⬅️ Kembali ke Input Data"):
+    
+    if st.button(" Kembali ke Input Data"):
         st.session_state['halaman'] = 'kalkulator'
         st.rerun()
         
@@ -265,22 +264,20 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
     st.markdown('</div>', unsafe_allow_html=True)
   
   
-       # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
+  
     st.write("###  Porsi Menu Makan Bergizi Gratis (MBG)")
-     # ==========================================
-    # FORM TAMBAH LAUK / MAKANAN BARU SECARA DINAMIS
-    # ==========================================
+
     with st.expander("➕ Tambah Menu Makanan / Lauk Baru Custom"):
         st.write("Masukkan detail bahan makanan baru untuk dimasukkan ke dalam daftar kalkulasi:")
         
-        # Membuat form input teks dan angka berdampingan
+        
         c_nama, c_harga = st.columns([2, 1])
         with c_nama:
             nama_baru = st.text_input("Nama Makanan / Lauk Baru:", placeholder="Contoh: Daging Sapi, Tahu, Ikan Kembung")
         with c_harga:
             harga_baru = st.number_input("Harga per Gram (Rp):", min_value=0.0, value=15.0, step=1.0)
             
-        # Membuat 4 kolom untuk input kandungan gizi per gram
+    
         g1, g2, g3, g4 = st.columns(4)
         with g1:
             kalori_baru = st.number_input("Kalori (Kkal/g):", min_value=0.0, value=2.5, step=0.1)
@@ -291,13 +288,11 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
         with g4:
             karbo_baru = st.number_input("Karbohidrat (g/g):", min_value=0.0, value=0.0, step=0.01)
             
-        # Tombol aksi untuk memasukkan data ke database session_state
-        # Tombol aksi untuk memasukkan data ke database_bahan (FORMAT DICTIONARY)
- # Tombol aksi untuk memasukkan data ke PANDAS DATAFRAME
+      
         if st.button(" Masukkan Makanan ke Daftar", type="primary"):
             if nama_baru.strip() != "":
                 
-                # 1. Membuat satu baris data baru dalam bentuk DataFrame
+                
                 df_baru = pd.DataFrame({
                     "Gunakan": [True], 
                     "Bahan Makanan": [nama_baru],
@@ -306,14 +301,13 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
                     "Protein (g)": [protein_baru],
                     "Lemak (g)": [lemak_baru],
                     "Karbohidrat (g)": [karbo_baru],
-                    "Batas Maksimal (g)": [150.0] # Menyamakan kolom bawaan asli kamu
+                    "Batas Maksimal (g)": [150.0] 
                 })
                 
-                # 2. Menggabungkan baris baru ini ke dalam database_bahan lammamu
+                
                 st.session_state['database_bahan'] = pd.concat([st.session_state['database_bahan'], df_baru], ignore_index=True)
                 
-                # 3. KUNCI UTAMA: Pindahkan halaman kembali ke 'kalkulator' (Input Data) 
-                # agar user bisa mencentang dan melihat kartu barunya!
+                
                 st.session_state['halaman'] = 'kalkulator'
                 
                 st.success(f"Berhasil menambahkan '{nama_baru}' ke dalam menu pilihan!")

@@ -281,23 +281,22 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
             karbo_baru = st.number_input("Karbohidrat (g/g):", min_value=0.0, value=0.0, step=0.01)
             
         # Tombol aksi untuk memasukkan data ke database session_state
+        # Tombol aksi untuk memasukkan data ke database_bahan (FORMAT DICTIONARY)
         if st.button("💾 Masukkan Makanan ke Daftar", type="primary"):
             if nama_baru.strip() != "":
-                # Format struktur data baru disesuaikan dengan isi database aslimu
-                menu_baru = {
+                # Format disesuaikan dengan Dictionary asli bawaan aplikasi kamu
+                st.session_state['database_bahan'][nama_baru] = {
                     "Harga": harga_baru,
                     "Kalori": kalori_baru,
                     "Protein": protein_baru,
                     "Lemak": lemak_baru,
                     "Karbohidrat": karbo_baru
                 }
-                
-                # Memasukkan ke dalam database dynamic di session_state kamu
-                st.session_state['database_bahan'][nama_baru] = menu_baru
                 st.success(f"Berhasil menambahkan '{nama_baru}' ke dalam menu pilihan!")
                 st.rerun()
             else:
                 st.error("Nama makanan tidak boleh kosong!")
+
 
     st.write("---") # Garis pembatas estetik
 

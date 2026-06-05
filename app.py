@@ -128,7 +128,7 @@ if st.session_state['halaman'] == 'beranda':
     """, unsafe_allow_html=True)
     
     # Membuat 2 tombol pilihan utama di bawah judul
-    kolom_tombol1, kolom_tombol2 = st.columns(2)
+    kolom_tombol1, kolom_tombol2, kolom_tombol3 = st.columns(3)
     
     with kolom_tombol1:
         if st.button("Kalkulator & Optimasi Gizi", use_container_width=True, type="primary"):

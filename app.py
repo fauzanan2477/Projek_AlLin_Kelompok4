@@ -22,7 +22,7 @@ st.markdown("""
      font-weight: 900; 
      color: #FFFFFF; 
      text-align: center; 
-     margin-top: 15vh; 
+     margin-top: 32vh; 
      line-height: 1.3;
  }
  .hero-title-large span { color: #EF8354; } 
@@ -32,7 +32,8 @@ st.markdown("""
      font-size: 1.2rem;
      color: #BFC0C0; 
      text-align: center;
-     margin-top: 40px;
+     margin-top: 20px;
+     margin-bottom: 50px;
      font-weight: 500;
      letter-spacing: 0.5px;
      animation: blink 2s infinite; 

@@ -304,54 +304,54 @@ elif st.session_state['halaman'] == 'kalkulator':
                          
                       
      
-      # Sinkronisasi akhir data checkbox dan stepper ke database utama
-     st.session_state['database_bahan']['Gunakan'] = list_gunakan
-     st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
- 
- 
-     
-     if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
-         bahan_terpilih = st.session_state['database_bahan'][st.session_state['database_bahan']["Gunakan"] == True].copy()
-         
-         if len(bahan_terpilih) < 2:
-             st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")
-         else:
-             array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp)"], errors='coerce').fillna(0).values
-             matriks_gizi = bahan_terpilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0).values
-             
-             # Batas Maksimal dikonversi dari gram ke unit pengali (dibagi 100)
-             batas_maksimal = [(0, p/100.0) for p in pd.to_numeric(bahan_terpilih["Batas Maksimal (g)"], errors='coerce').fillna(1000).values]
-             
-             # Matriks A dikali -1 karena linprog SciPy menggunakan fungsi <= sedangkan kita butuh >=
-             A_kiri = -1 * matriks_gizi.T
-             B_kanan = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']])
-             
-             try:
-                 solusi = linprog(array_harga, A_ub=A_kiri, b_ub=B_kanan, bounds=batas_maksimal, method='highs')
-                 
-                 if solusi.success:
-                     st.markdown(f"""
-                     <div class="result-card">
-                         <p>Total Biaya Paling Minimum (Titik Optimal)</p>
-                         <h2>Rp {solusi.fun:,.0f}</h2>
-                         <p>Solusi Makanan Termurah Sesuai Target Waktu</p>
-                     </div>
-                     """, unsafe_allow_html=True)
-                     
-                     st.markdown('<div class="white-box">', unsafe_allow_html=True)
-                     st.write("### ⚖️ Vektor Rekomendasi Takaran")
-                     hasil_gram = solusi.x * 100 
-                     tabel_hasil = pd.DataFrame({
-                         "Bahan Makanan": bahan_terpilih["Bahan Makanan"].values,
-                         "Takaran Disarankan": [f"{g:,.0f} Gram" for g in hasil_gram],
-                         "Biaya Realisasi": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, array_harga)]
-                     })
-                     st.table(tabel_hasil[solusi.x > 0.01].reset_index(drop=True))
-                     st.markdown('</div>', unsafe_allow_html=True)
-                 else:
-                     st.error("🚨 SPL Infeasible: Matriks gagal terpenuhi. Coba perbesar 'Batas Maksimal (g)' atau tambahkan variasi lauk.")
-             except Exception as e:
-                 st.error(f"Error komputasi: {e}")
+     # Sinkronisasi akhir data checkbox dan stepper ke database utama
+    st.session_state['database_bahan']['Gunakan'] = list_gunakan
+    st.session_state['database_bahan']['Batas Maksimal (g)'] = list_batas_maksimal
+
+
+    
+    if st.button("🚀 Kalkulasi Biaya Termurah", type="primary", use_container_width=True):
+        bahan_terpilih = st.session_state['database_bahan'][st.session_state['database_bahan']["Gunakan"] == True].copy()
+        
+        if len(bahan_terpilih) < 2:
+            st.error("⚠️ Centang minimal 2 bahan makanan untuk komputasi matriks.")
+        else:
+            array_harga = pd.to_numeric(bahan_terpilih["Harga (Rp)"], errors='coerce').fillna(0).values
+            matriks_gizi = bahan_terpilih[["Kalori (Kkal)", "Protein (g)", "Lemak (g)", "Karbohidrat (g)"]].apply(pd.to_numeric, errors='coerce').fillna(0).values
+            
+            # Batas Maksimal dikonversi dari gram ke unit pengali (dibagi 100)
+            batas_maksimal = [(0, p/100.0) for p in pd.to_numeric(bahan_terpilih["Batas Maksimal (g)"], errors='coerce').fillna(1000).values]
+            
+            # Matriks A dikali -1 karena linprog SciPy menggunakan fungsi <= sedangkan kita butuh >=
+            A_kiri = -1 * matriks_gizi.T
+            B_kanan = -1 * np.array([st.session_state['target_kalori'], st.session_state['target_protein'], st.session_state['target_lemak'], st.session_state['target_karbo']])
+            
+            try:
+                solusi = linprog(array_harga, A_ub=A_kiri, b_ub=B_kanan, bounds=batas_maksimal, method='highs')
+                
+                if solusi.success:
+                    st.markdown(f"""
+                    <div class="result-card">
+                        <p>Total Biaya Paling Minimum (Titik Optimal)</p>
+                        <h2>Rp {solusi.fun:,.0f}</h2>
+                        <p>Solusi Makanan Termurah Sesuai Target Waktu</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown('<div class="white-box">', unsafe_allow_html=True)
+                    st.write("### ⚖️ Vektor Rekomendasi Takaran")
+                    hasil_gram = solusi.x * 100 
+                    tabel_hasil = pd.DataFrame({
+                        "Bahan Makanan": bahan_terpilih["Bahan Makanan"].values,
+                        "Takaran Disarankan": [f"{g:,.0f} Gram" for g in hasil_gram],
+                        "Biaya Realisasi": [f"Rp {(g/100)*h:,.0f}" for g, h in zip(hasil_gram, array_harga)]
+                    })
+                    st.table(tabel_hasil[solusi.x > 0.01].reset_index(drop=True))
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.error("🚨 SPL Infeasible: Matriks gagal terpenuhi. Coba perbesar 'Batas Maksimal (g)' atau tambahkan variasi lauk.")
+            except Exception as e:
+                st.error(f"Error komputasi: {e}")
 
 # --- HALAMAN 3: LANGKAH MANUAL (SANGAT DETAIL SESUAI JURNAL) ---
 with tab_manual:

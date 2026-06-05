@@ -109,6 +109,7 @@ if 'target_kalori' not in st.session_state:
 # 4. MENU NAVBAR (TABS)
 # ==========================================
 tab_beranda, tab_gizi, tab_aljabar, tab_manual, tab_docs = st.tabs([
+    "Beranda"
     "1. Kalkulator Gizi", 
     "2. Eksekusi Optimasi", 
     "3. Langkah Manual (Sangat Detail)", 

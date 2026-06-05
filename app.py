@@ -241,67 +241,67 @@ elif st.session_state['halaman'] == 'kalkulator':
   
   
        # ✅ TIMPA DENGAN KODE BARU INI UNTUK MEMBUAT GRID CARD 3 KOLOM:
-      st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
-      st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
+    st.write("### 🍱 Porsi Menu Makan Bergizi Gratis (MBG)")
+    st.write("Gunakan tombol ➕/➖ untuk mengatur porsi, dan klik tombol rincian untuk melihat kandungan gizi lauk.")
       
-      # Wadah penampung data dinamis dari user
-     list_gunakan = []
-     list_batas_maksimal = []
+     # Wadah penampung data dinamis dari user
+    list_gunakan = []
+    list_batas_maksimal = []
+     
+    database_aktif = st.session_state['database_bahan']
+    total_bahan = len(database_aktif)
       
-     database_aktif = st.session_state['database_bahan']
-     total_bahan = len(database_aktif)
-      
-      # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
-     for i in range(0, total_bahan, 3):
-          # Membuat 3 kolom horizontal berdampingan di satu baris
-          kolom_card = st.columns(3)
-          
-          # Mengisi tiap-tiap kolom (Maksimal 3 card per baris)
-          for j in range(3):
-              idx_bahan = i + j
-              if idx_bahan < total_bahan:
-                  row = database_aktif.iloc[idx_bahan]
-                  
-                  # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
-                  with kolom_card[j]:
-                      # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
-                      with st.container(border=True):
-                      
-                      # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
-                          c_nama, c_aktif = st.columns([3, 1])
-                          with c_nama:
-                              st.markdown(f"##### **{row['Bahan Makanan']}**")
-                          with c_aktif:
-                              status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
-                              list_gunakan.append(status_aktif)
-                          
-                          # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
-                          porsi_maks = st.number_input(
-                              "Batas Maksimal (Gram):",
-                              min_value=0.0,
-                              max_value=1000.0,
-                              value=float(row["Batas Maksimal (g)"]),
-                              step=50.0,
-                              key=f"num_{idx_bahan}"
-                          )
-                          list_batas_maksimal.append(porsi_maks)
-                      
-                      # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
-                      with st.popover("📋 Detail & Edit Gizi", use_container_width=True):
-                          st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
-                          edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{idx_bahan}")
-                          edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{idx_bahan}")
-                          edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{idx_bahan}")
-                          edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{idx_bahan}")
-                          edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{idx_bahan}")
-                          
-                          # Menyuntikkan langsung perubahan ke database memori
-                          st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
-                          st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
-                          st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
-                          st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
-                          st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
-                          
+     # Melakukan looping per 3 bahan makanan sekaligus untuk membuat baris baru
+    for i in range(0, total_bahan, 3):
+         # Membuat 3 kolom horizontal berdampingan di satu baris
+         kolom_card = st.columns(3)
+         
+         # Mengisi tiap-tiap kolom (Maksimal 3 card per baris)
+         for j in range(3):
+             idx_bahan = i + j
+             if idx_bahan < total_bahan:
+                 row = database_aktif.iloc[idx_bahan]
+                 
+                 # Menempatkan Card ke dalam kolom yang sesuai (Kolom 0, 1, atau 2)
+                 with kolom_card[j]:
+                     # Membuka kotak bingkai premium mini-card (Menggunakan kelas white-box kamu)
+                     with st.container(border=True):
+                     
+                     # 1. Baris Atas Card: Nama Lauk & Tombol Centang Aktif
+                         c_nama, c_aktif = st.columns([3, 1])
+                         with c_nama:
+                             st.markdown(f"##### **{row['Bahan Makanan']}**")
+                         with c_aktif:
+                             status_aktif = st.checkbox("Pakai", value=row["Gunakan"], key=f"chk_{idx_bahan}", label_visibility="collapsed")
+                             list_gunakan.append(status_aktif)
+                         
+                         # 2. Baris Tengah Card: Tombol Input Stepper Porsi (+ / -)
+                         porsi_maks = st.number_input(
+                             "Batas Maksimal (Gram):",
+                             min_value=0.0,
+                             max_value=1000.0,
+                             value=float(row["Batas Maksimal (g)"]),
+                             step=50.0,
+                             key=f"num_{idx_bahan}"
+                         )
+                         list_batas_maksimal.append(porsi_maks)
+                     
+                     # 3. Baris Bawah Card: Tombol Popover Rincian Gizi
+                     with st.popover("📋 Detail & Edit Gizi", use_container_width=True):
+                         st.markdown(f"#### 🧪 Nilai Gizi {row['Bahan Makanan']}")
+                         edit_harga = st.number_input(f"Harga (Rp)", min_value=0, value=int(row["Harga (Rp)"]), key=f"hrg_{idx_bahan}")
+                         edit_kalori = st.number_input(f"Kalori (Kkal)", min_value=0.0, value=float(row["Kalori (Kkal)"]), key=f"kal_{idx_bahan}")
+                         edit_protein = st.number_input(f"Protein (g)", min_value=0.0, value=float(row["Protein (g)"]), key=f"pro_{idx_bahan}")
+                         edit_lemak = st.number_input(f"Lemak (g)", min_value=0.0, value=float(row["Lemak (g)"]), key=f"lem_{idx_bahan}")
+                         edit_karbo = st.number_input(f"Karbohidrat (g)", min_value=0.0, value=float(row["Karbohidrat (g)"]), key=f"kar_{idx_bahan}")
+                         
+                         # Menyuntikkan langsung perubahan ke database memori
+                         st.session_state['database_bahan'].at[idx_bahan, "Harga (Rp)"] = edit_harga
+                         st.session_state['database_bahan'].at[idx_bahan, "Kalori (Kkal)"] = edit_kalori
+                         st.session_state['database_bahan'].at[idx_bahan, "Protein (g)"] = edit_protein
+                         st.session_state['database_bahan'].at[idx_bahan, "Lemak (g)"] = edit_lemak
+                         st.session_state['database_bahan'].at[idx_bahan, "Karbohidrat (g)"] = edit_karbo
+                         
                       
      
       # Sinkronisasi akhir data checkbox dan stepper ke database utama

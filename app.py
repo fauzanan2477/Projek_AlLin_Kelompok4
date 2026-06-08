@@ -615,7 +615,7 @@ elif st.session_state['halaman'] == 'manual':
         st.caption(" *Ini adalah Tableau Initial Fase 1 yang sudah ter-substitusi.*")
         
         st.markdown("""
-        **🔄 Proses Lanjutan Fase 1 (Operasi Baris Elementer):**
+        **Proses Lanjutan Fase 1 (Operasi Baris Elementer):**
         Sistem komputer melakukan iterasi (Pivot) pada matriks di atas dengan tahapan:
         1. **Menentukan Kolom Masuk (Entering Variable):** Mencari nilai paling positif pada baris $W$.
         2. **Menentukan Baris Keluar (Leaving Variable):** Menghitung Rasio = Nilai Kanan (NK) dibagi nilai Kolom Masuk, lalu memilih rasio terkecil.

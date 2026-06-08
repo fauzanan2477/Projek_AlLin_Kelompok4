@@ -450,12 +450,12 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
                     <div class="result-card" style="background-color: #EF8354; padding: 20px; border-radius: 10px; color: white; text-align: center; margin-top: 20px; margin-bottom: 20px;">
                         <p style="margin: 0; font-size: 1.2rem; font-weight: bold; color: white !important;">Total Biaya Paling Minimum (Titik Optimal)</p>
                         <h2 style="margin: 0; font-size: 3rem; font-weight: 900; color: white !important;">Rp {solusi.fun:,.0f}</h2>
-                        <p style="margin: 0; color: white !important;">Solusi Makanan Termurah Sesuai Target Waktu</p>
+                        <p style="margin: 0; color: white !important;">Solusi Makanan Termurah Sesuai Target Gizi</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
                     st.markdown('<div class="white-box">', unsafe_allow_html=True)
-                    st.write("### ⚖️ Vektor Rekomendasi Takaran")
+                    st.write("### Vektor Rekomendasi Takaran")
                     hasil_gram = solusi.x * 100 
                     tabel_hasil = pd.DataFrame({
                         "Bahan Makanan": bahan_terpilih["Bahan Makanan"].values,
@@ -490,7 +490,7 @@ elif st.session_state['halaman'] == 'hasil_kalkulasi':
                     st.plotly_chart(fig_bar, use_container_width=True)
 
                     st.write("---")
-                    st.write("###  Analisis Sensitivitas (Sesuai Jurnal Universitas Brawijaya)")
+                    st.write("###  Analisis Sensitivitas (Merujuk Jurnal Universitas Brawijaya)")
                     st.write("Grafik di bawah ini memanipulasi batas minimal porsi untuk membuktikan bahwa melonggarkan syarat porsi minimal akan memperluas daerah *feasible* (menurunkan total biaya).")
                     
                     rentang_minimal = [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
@@ -536,7 +536,7 @@ elif st.session_state['halaman'] == 'manual':
         st.rerun()
     st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
-    st.write("### ✍️ Simulasi Pemodelan Aljabar Linier")
+    st.write("### Simulasi Pemodelan Aljabar Linier")
     st.write("Proses di bawah ini menjabarkan komputasi yang terjadi di balik layar, mengacu pada tahapan Metode Simpleks Dua Fase di Jurnal Universitas Brawijaya.")
     
     # ------------------ TAHAP 1 ------------------

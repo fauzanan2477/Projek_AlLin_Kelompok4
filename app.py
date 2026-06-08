@@ -612,7 +612,7 @@ elif st.session_state['halaman'] == 'manual':
         
         df_tableau = pd.DataFrame(data_tableau, columns=header_kolom)
         st.dataframe(df_tableau.style.format(precision=1), use_container_width=True, hide_index=True)
-        st.caption(" *Ini adalah Tableau Initial Fase 1 yang sudah ter-substitusi.*")
+        st.caption(" *Ini adalah Tabel Inisial Fase 1 yang sudah ter-substitusi.*")
         
         st.markdown("""
         **Proses Lanjutan Fase 1 (Operasi Baris Elementer):**
@@ -634,7 +634,7 @@ elif st.session_state['halaman'] == 'manual':
         
         df_fase2 = pd.DataFrame([baris_Z_fase2], columns=header_fase2)
         st.dataframe(df_fase2, use_container_width=True, hide_index=True)
-        st.caption(" *Sistem akan melanjutkan proses iterasi/pivot pada tabel transisi ini hingga mendapatkan nilai Z (Biaya) yang paling kecil. Hasil akhir ditampilkan di Tab 2.*")
+        st.caption(" *Sistem akan melanjutkan proses iterasi/pivot pada tabel transisi ini hingga mendapatkan nilai Z (Biaya) yang paling kecil. Hasil akhir ditampilkan di Modul Kalkulator & Optimasi Gizi.*")
 
         # ------------------ TAHAP 6 ------------------
         st.write("---")

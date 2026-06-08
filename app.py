@@ -660,7 +660,7 @@ elif st.session_state['halaman'] == 'dokumentasi':
     st.markdown('<div class="header-title-small">Sistem Pakar <span>MBG</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="white-box">', unsafe_allow_html=True)
     
-    st.write("###  Integrasi Matriks Aljabar")
+    st.write("###  Matriks Aljabar Linear")
     st.latex(r"\text{Fungsi Minimum: } Z = \mathbf{C}^T \mathbf{X} \quad | \quad \text{Kendala: } \mathbf{A}\mathbf{X} \ge \mathbf{B}")
     
     st.write("Penjelasan Variabel Ruang Vektor:")
